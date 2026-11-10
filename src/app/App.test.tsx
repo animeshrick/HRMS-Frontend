@@ -4,11 +4,30 @@ import { afterEach, vi } from "vitest";
 import { App } from "./App";
 import { renderWithProviders, storeSession } from "../test/renderWithProviders";
 
+// Requests the layout makes by itself on every page (the notification bell). They are answered
+// separately so they never consume a reply the test queued for its own calls.
+const BACKGROUND_PATHS = ["/leave/mine"];
+
+function isBackground(url: unknown) {
+  return BACKGROUND_PATHS.some((path) => String(url).replace(/^\/api/, "").startsWith(path));
+}
+
+/** The calls the test is about, with the layout's own background requests left out. */
+function serverCalls(fetchMock: ReturnType<typeof vi.fn>) {
+  return fetchMock.mock.calls.filter(([url]) => !isBackground(url));
+}
+
 function mockFetchSequence(...responses: Array<{ status: number; body: unknown }>) {
-  const fetchMock = vi.fn();
-  for (const response of responses) {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(response.body), { status: response.status }));
-  }
+  const queued = [...responses];
+  const fetchMock = vi.fn(async (url: string) => {
+    if (isBackground(url)) {
+      return new Response(JSON.stringify([]), { status: 200 });
+    }
+    const next = queued.shift();
+    return next
+      ? new Response(JSON.stringify(next.body), { status: next.status })
+      : new Response(JSON.stringify({ detail: `No fake left for ${url}` }), { status: 500 });
+  });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -46,7 +65,7 @@ describe("login", () => {
     renderWithProviders(<App />, "/login");
     await userEvent.click(screen.getByRole("button", { name: "Log in" }));
     expect(screen.getByText("Enter the employee ID.")).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(serverCalls(fetchMock)).toHaveLength(0);
   });
 
   it("shows the server message for wrong credentials", async () => {
@@ -124,7 +143,7 @@ describe("chat", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("could not answer right now");
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByText("Second try worked.")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(serverCalls(fetchMock)).toHaveLength(3);
   });
 
   it("logs out when the server says the session is not valid", async () => {

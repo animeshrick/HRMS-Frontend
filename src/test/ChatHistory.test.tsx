@@ -43,18 +43,15 @@ describe("chat history", () => {
     expect(screen.queryByRole("button", { name: /load older/i })).not.toBeInTheDocument();
   });
 
-  it("loads older messages when a full page came back", async () => {
-    const firstPage = Array.from({ length: 50 }, (_, index) => savedMessage(101 + index, "user", `message ${101 + index}`, "2026-11-08T17:11:35Z"));
-    const fetchMock = mockRoutes({
-      "GET /chat/history": ({ init }) => ({ body: init.method === "GET" ? firstPage : [] }),
-    });
+  it("shows the whole saved history in one request and never asks for an older page", async () => {
+    const wholeHistory = Array.from({ length: 10 }, (_, index) => savedMessage(101 + index, "user", `message ${101 + index}`, "2026-11-08T17:11:35Z"));
+    const fetchMock = mockRoutes({ "GET /chat/history": { body: wholeHistory } });
     renderWithProviders(<App />, "/chat");
-    const button = await screen.findByRole("button", { name: /load older messages/i });
-    await userEvent.click(button);
-    const olderCalls = fetchMock.mock.calls.filter(([url]) => String(url).includes("before_id=101"));
-    expect(olderCalls).toHaveLength(1);
-    expect(callsTo(fetchMock, "GET /chat/history").length).toBeGreaterThanOrEqual(1);
-    expect(await screen.findByText("message 150")).toBeInTheDocument();
+    expect(await screen.findByText("message 110")).toBeInTheDocument();
+    expect(screen.getByText("message 101")).toBeInTheDocument();
+    expect(callsTo(fetchMock, "GET /chat/history")).toHaveLength(1);
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes("before_id"))).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: /load older/i })).not.toBeInTheDocument();
   });
 
   it("still works when the history cannot be loaded, and gives new messages a time", async () => {

@@ -12,8 +12,7 @@ export function askQuestion(token: string, question: string, signal?: AbortSigna
   });
 }
 
-/** My saved messages, oldest first. beforeId loads the page of messages before that message id. */
-export function loadChatHistory(token: string, beforeId?: number, signal?: AbortSignal): Promise<ChatHistoryMessage[]> {
-  const query = beforeId === undefined ? "" : `?before_id=${beforeId}`;
-  return apiRequest<ChatHistoryMessage[]>(`/chat/history${query}`, { method: "GET", token, signal });
+/** My saved messages, oldest first. The server keeps only the newest few, so this is the whole history. */
+export function loadChatHistory(token: string, signal?: AbortSignal): Promise<ChatHistoryMessage[]> {
+  return apiRequest<ChatHistoryMessage[]>("/chat/history", { method: "GET", token, signal });
 }

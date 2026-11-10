@@ -14,6 +14,17 @@ export function isDecided(leave: LeaveRequestRow): leave is DecidedLeave {
   return leave.status === "approved" || leave.status === "rejected";
 }
 
+/** "Approved by Rahul Verma" or "Rejected by Rahul Verma: reason". Empty while the leave is still open. */
+export function decisionSummary(leave: LeaveRequestRow): string {
+  if (!isDecided(leave)) {
+    return "";
+  }
+  const verb = leave.status === "approved" ? "Approved" : "Rejected";
+  const by = leave.decided_by_name ? ` by ${leave.decided_by_name}` : "";
+  const note = leave.decision_note?.trim();
+  return note ? `${verb}${by}: ${note}` : `${verb}${by}`;
+}
+
 function storageKeyFor(employeeId: number | string): string {
   return `${STORAGE_KEY}:${employeeId}`;
 }

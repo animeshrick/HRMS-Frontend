@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { getMyLeaves } from "../api/leave";
 import { useAuth } from "../app/AuthContext";
-import { isDecided, readSeenIds, writeSeenIds } from "../lib/decisions";
+import { decisionSummary, isDecided, readSeenIds, writeSeenIds } from "../lib/decisions";
 
 const REFRESH_MILLISECONDS = 60_000; // a decision is not urgent; once a minute is plenty
 
@@ -30,7 +30,11 @@ export function NotificationBell() {
     refetchOnWindowFocus: true,
   });
 
-  const decided = useMemo(() => (leavesQuery.data ?? []).filter(isDecided), [leavesQuery.data]);
+  // Anything other than a list (an error body, a proxy page) must not break the header.
+  const decided = useMemo(() => {
+    const rows = Array.isArray(leavesQuery.data) ? leavesQuery.data : [];
+    return rows.filter(isDecided);
+  }, [leavesQuery.data]);
   const unseen = useMemo(() => decided.filter((leave) => !seenIds.includes(leave.id)), [decided, seenIds]);
 
   // Close when clicking anywhere else, or on Escape.
@@ -118,8 +122,8 @@ export function NotificationBell() {
                     />
                     <span className="min-w-0">
                       <span className="block truncate text-sm text-slate-800">{leave.description}</span>
-                      <span className={`text-xs capitalize ${leave.status === "approved" ? "text-green-700" : "text-red-700"}`}>
-                        {leave.status}
+                      <span className={`block text-xs ${leave.status === "approved" ? "text-green-700" : "text-red-700"}`}>
+                        {decisionSummary(leave)}
                       </span>
                     </span>
                   </button>

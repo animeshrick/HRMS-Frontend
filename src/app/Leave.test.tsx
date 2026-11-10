@@ -60,7 +60,7 @@ describe("chat with a leave waiting for confirmation", () => {
     await screen.findByRole("button", { name: "Yes, confirm" });
     await userEvent.upload(screen.getByLabelText(/Related document/), new File(["x"], "virus.exe", { type: "application/x-msdownload" }), { applyAccept: false });
     expect(await screen.findByText("Only PDF, PNG or JPG files can be uploaded.")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(2);      // the chat history and the chat message, nothing for the wrong file
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).includes("/leave/documents"))).toHaveLength(0);
   });
 });
 
@@ -133,6 +133,22 @@ describe("leave page", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("only 1 day of Casual Leave left");
   });
 
+  it("says who approved or rejected a request, and why", async () => {
+    storeSession();
+    mockRoutes({
+      "GET /leave/balances": { body: BALANCES },
+      "GET /leave/mine": { body: [
+        { id: 13, leave_type: "sick", start_date: "2026-11-09", end_date: "2026-11-09", day_type: "full", days: 1, status: "rejected", reason: null, document_path: null,
+          description: "Sick Leave on Mon, 9 Nov 2026 (full day)", decided_by_name: "Rahul Verma", decision_note: "Please take it next week" },
+        { id: 14, leave_type: "casual", start_date: "2026-11-16", end_date: "2026-11-20", day_type: "full", days: 5, status: "approved", reason: null, document_path: null,
+          description: "Casual Leave from Mon, 16 Nov 2026 to Fri, 20 Nov 2026 (5 days)", decided_by_name: "Priya Sen", decision_note: null },
+      ] },
+    });
+    renderWithProviders(<App />, "/leave");
+    expect(await screen.findByText("Rejected by Rahul Verma: Please take it next week")).toBeInTheDocument();
+    expect(screen.getByText("Approved by Priya Sen")).toBeInTheDocument();
+  });
+
   it("lists my requests and cancels one", async () => {
     storeSession();
     const fetchMock = mockRoutes({
@@ -173,7 +189,42 @@ describe("approvals page", () => {
     renderWithProviders(<App />, "/approvals");
     await screen.findByText("Ananya Das (EMP003)");
     await userEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await userEvent.type(screen.getByLabelText(/Why are you rejecting/), "Team is short that week");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm rejection" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("already approved");
+  });
+
+  it("will not reject without a written reason, and sends the reason with the rejection", async () => {
+    storeSession({ employeeId: "EMP002" });
+    let approvals = [APPROVAL];
+    const fetchMock = mockRoutes({
+      "GET /leave/approvals": () => ({ body: approvals }),
+      "POST /leave/12/decision": () => { approvals = []; return { body: { leave_id: 12, status: "rejected" } }; },
+    });
+    renderWithProviders(<App />, "/approvals");
+    await screen.findByText("Ananya Das (EMP003)");
+    await userEvent.click(screen.getByRole("button", { name: "Reject" }));
+    const confirm = screen.getByRole("button", { name: "Confirm rejection" });
+    expect(confirm).toBeDisabled();                                   // nothing typed yet
+    await userEvent.type(screen.getByLabelText(/Why are you rejecting/), "   ");
+    expect(confirm).toBeDisabled();                                   // spaces are not a reason
+    await userEvent.type(screen.getByLabelText(/Why are you rejecting/), "Overlaps the release");
+    await userEvent.click(confirm);
+    expect(await screen.findByText("Nothing is waiting for you.")).toBeInTheDocument();
+    expect(JSON.parse(callsTo(fetchMock, "POST /leave/12/decision")[0]![1].body as string)).toMatchObject({
+      decision: "rejected", note: "Overlaps the release",
+    });
+  });
+
+  it("does not send a rejection when the reason box is cancelled", async () => {
+    storeSession({ employeeId: "EMP002" });
+    const fetchMock = mockRoutes({ "GET /leave/approvals": { body: [APPROVAL] } });
+    renderWithProviders(<App />, "/approvals");
+    await screen.findByText("Ananya Das (EMP003)");
+    await userEvent.click(screen.getByRole("button", { name: "Reject" }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByLabelText(/Why are you rejecting/)).not.toBeInTheDocument();
+    expect(callsTo(fetchMock, "POST /leave/12/decision")).toHaveLength(0);
   });
 
   it("opens the signed document link in a new tab", async () => {

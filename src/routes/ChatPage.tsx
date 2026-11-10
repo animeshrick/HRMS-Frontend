@@ -20,8 +20,6 @@ interface ChatMessage {
   historyId?: number; // the id in the saved history (only for messages that came from it)
 }
 
-const HISTORY_PAGE_SIZE = 50; // the backend sends this many messages per page
-
 /** A saved message from the backend, in the shape this page shows. */
 function toChatMessage(saved: ChatHistoryMessage, id: number): ChatMessage {
   const base = { id, text: saved.message, createdAt: saved.created_at, historyId: saved.id };
@@ -49,9 +47,7 @@ export function ChatPage() {
   const abortControllerReference = useRef<AbortController | null>(null);
   const nextMessageIdReference = useRef(1);
   const bottomReference = useRef<HTMLDivElement | null>(null);
-  const [hasOlderMessages, setHasOlderMessages] = useState(false);
-  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
-  const shouldScrollToBottomReference = useRef(true); // false while older messages are added at the top
+  const shouldScrollToBottomReference = useRef(true);
 
   useEffect(() => {
     if (shouldScrollToBottomReference.current) {
@@ -60,44 +56,23 @@ export function ChatPage() {
     shouldScrollToBottomReference.current = true;
   }, [messages, isWaiting]);
 
-  // Show the saved messages of the last 30 days when the page opens. If they cannot be loaded, the chat still works.
+  // Show the saved messages when the page opens. The database keeps only the newest few per employee
+  // (see sql/09_chat_history.sql), so this is the whole history. If it cannot be loaded, the chat still works.
   useEffect(() => {
     if (!session) {
       return;
     }
     const abortController = new AbortController();
-    loadChatHistory(session.accessToken, undefined, abortController.signal)
+    loadChatHistory(session.accessToken, abortController.signal)
       .then((savedMessages) => {
         setMessages((previousMessages) => [
           ...savedMessages.map((saved) => toChatMessage(saved, nextMessageIdReference.current++)),
           ...previousMessages,
         ]);
-        setHasOlderMessages(savedMessages.length >= HISTORY_PAGE_SIZE);
       })
       .catch(() => undefined);
     return () => abortController.abort();
   }, [session]);
-
-  async function showOlderMessages() {
-    const oldestId = messages.find((message) => message.historyId !== undefined)?.historyId;
-    if (!session || oldestId === undefined || isLoadingOlder) {
-      return;
-    }
-    setIsLoadingOlder(true);
-    try {
-      const savedMessages = await loadChatHistory(session.accessToken, oldestId);
-      shouldScrollToBottomReference.current = false;
-      setMessages((previousMessages) => [
-        ...savedMessages.map((saved) => toChatMessage(saved, nextMessageIdReference.current++)),
-        ...previousMessages,
-      ]);
-      setHasOlderMessages(savedMessages.length >= HISTORY_PAGE_SIZE);
-    } catch (error) {
-      addMessage({ author: "error", text: describeError(error) });
-    } finally {
-      setIsLoadingOlder(false);
-    }
-  }
 
   // Stop an unfinished request if the user leaves this page.
   useEffect(() => () => abortControllerReference.current?.abort(), []);
@@ -190,19 +165,6 @@ export function ChatPage() {
                 </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {hasOlderMessages && (
-          <div className="text-center">
-            <button
-              type="button"
-              disabled={isLoadingOlder}
-              onClick={() => void showOlderMessages()}
-              className="rounded-md border border-slate-300 bg-white px-3 py-1 text-sm hover:bg-slate-100 disabled:opacity-60"
-            >
-              {isLoadingOlder ? "Loading..." : "Load older messages"}
-            </button>
           </div>
         )}
 

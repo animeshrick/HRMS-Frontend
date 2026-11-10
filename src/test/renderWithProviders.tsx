@@ -34,7 +34,8 @@ type RouteReply = { status?: number; body: unknown };
 
 /** Replaces fetch with a fake that answers by "METHOD /path". Returns the fake so a test can look at the calls. */
 export function mockRoutes(routes: Record<string, RouteReply | ((request: { body: unknown; init: RequestInit }) => RouteReply)>) {
-  routes = { "GET /chat/history": { body: [] }, ...routes }; // an empty chat history, unless the test gives one
+  // The layout loads these on its own on every page: an empty answer unless the test gives one.
+  routes = { "GET /chat/history": { body: [] }, "GET /leave/mine": { body: [] }, ...routes };
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
     const path = String(url).replace(/^\/api/, "");
     const key = `${init.method ?? "GET"} ${path}`;

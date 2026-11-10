@@ -6,6 +6,7 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { FormField } from "../components/FormField";
 import { SkeletonRows } from "../components/Loading";
 import { describeError } from "../lib/errors";
+import { decisionSummary } from "../lib/decisions";
 import { companyToday } from "../lib/time";
 import { validateDocument } from "../lib/validation";
 import type { LeaveRequestRow } from "../api/types";
@@ -206,8 +207,11 @@ export function LeavePage() {
         <ul className="divide-y divide-slate-100">
           {leavesQuery.data?.map((leave) => (
             <li key={leave.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-              <span>
-                #{leave.id} {leave.description}
+              <span className="min-w-0">
+                <span className="block">
+                  #{leave.id} {leave.description}
+                </span>
+                {decisionSummary(leave) && <span className="block text-xs text-slate-500">{decisionSummary(leave)}</span>}
               </span>
               <span className="flex items-center gap-2">
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs capitalize">{leave.status}</span>

@@ -72,7 +72,7 @@ export interface MyProfile {
   is_active: boolean;
 }
 
-/** One saved message from /chat/history (a question or an answer), kept for 30 days. */
+/** One saved message from /chat/history (a question or an answer). Only the newest few per employee are kept. */
 export interface ChatHistoryMessage {
   id: number;
   sender: "user" | "assistant";
@@ -122,6 +122,8 @@ export interface LeaveRequestRow {
   reason: string | null;
   document_path: string | null;
   description: string;
+  decided_by_name: string | null; // who approved or rejected it, once decided
+  decision_note: string | null;   // the approver's comment (the reason, for a rejection)
 }
 
 export interface LeaveApplyRequest {

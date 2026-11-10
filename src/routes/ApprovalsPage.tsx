@@ -12,14 +12,28 @@ export function ApprovalsPage() {
   const employeeId = session!.employeeId;
   const queryClient = useQueryClient();
   const [documentError, setDocumentError] = useState<string | null>(null);
+  const [rejectingLeaveId, setRejectingLeaveId] = useState<number | null>(null); // the request whose reason is being written
+  const [rejectReason, setRejectReason] = useState("");
 
   const approvalsQuery = useQuery({ queryKey: ["approvals", employeeId], queryFn: () => getApprovals(token) });
 
   const decisionMutation = useMutation({
-    mutationFn: (input: { leaveId: number; decision: "approved" | "rejected" }) => decideLeave(token, input.leaveId, input.decision),
+    mutationFn: (input: { leaveId: number; decision: "approved" | "rejected"; note?: string }) =>
+      decideLeave(token, input.leaveId, input.decision, input.note),
+    onSuccess: () => {
+      setRejectingLeaveId(null);
+      setRejectReason("");
+    },
     // Refresh even after an error: someone else may have decided the request first.
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["approvals", employeeId] }),
   });
+
+  function confirmRejection(leaveId: number) {
+    const reason = rejectReason.trim();
+    if (reason) {
+      decisionMutation.mutate({ leaveId, decision: "rejected", note: reason });
+    }
+  }
 
   async function openDocument(leaveId: number) {
     setDocumentError(null);
@@ -54,6 +68,38 @@ export function ApprovalsPage() {
             </p>
             <p className="text-sm text-slate-700">{approval.description}</p>
             {approval.reason && <p className="text-sm text-slate-500">Reason: {approval.reason}</p>}
+            {rejectingLeaveId === approval.id && (
+              <div className="mt-3 space-y-2">
+                <label htmlFor={`reject-reason-${approval.id}`} className="block text-sm font-medium text-slate-700">
+                  Why are you rejecting this leave? The employee will see this.
+                </label>
+                <textarea
+                  id={`reject-reason-${approval.id}`}
+                  value={rejectReason}
+                  onChange={(event) => setRejectReason(event.target.value)}
+                  maxLength={500}
+                  rows={3}
+                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+                <div className="flex gap-2 text-sm">
+                  <button
+                    type="button"
+                    disabled={decisionMutation.isPending || rejectReason.trim() === ""}
+                    onClick={() => confirmRejection(approval.id)}
+                    className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
+                  >
+                    Confirm rejection
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRejectingLeaveId(null)}
+                    className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="mt-3 flex flex-wrap gap-2 text-sm">
               <button
                 type="button"
@@ -66,7 +112,10 @@ export function ApprovalsPage() {
               <button
                 type="button"
                 disabled={decisionMutation.isPending}
-                onClick={() => decisionMutation.mutate({ leaveId: approval.id, decision: "rejected" })}
+                onClick={() => {
+                  setRejectingLeaveId(approval.id);
+                  setRejectReason("");
+                }}
                 className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
               >
                 Reject
