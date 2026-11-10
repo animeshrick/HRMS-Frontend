@@ -4,7 +4,9 @@ React + TypeScript + Vite + Tailwind. Talks to the FastAPI backend (login, chat,
 
 ## Run it (Windows, PowerShell)
 
-1. Start the backend from its project folder: `uvicorn main:app --app-dir app --reload` (default `http://127.0.0.1:8000`).
+1. Backend: either use the deployed one (already set in `.env.local` as `VITE_DEV_PROXY_TARGET=http://13.239.26.128`),
+   or run it locally from its project folder with `uvicorn app.main:app --reload` (default `http://127.0.0.1:8000`)
+   and change that line in `.env.local`.
 2. In this folder:
 
 ```
