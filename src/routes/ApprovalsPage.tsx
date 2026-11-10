@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { decideLeave, getApprovals, getDocumentUrl } from "../api/leave";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { SkeletonRows } from "../components/Loading";
 import { describeError } from "../lib/errors";
 
 export function ApprovalsPage() {
@@ -39,6 +40,11 @@ export function ApprovalsPage() {
       {approvalsQuery.isError && <ErrorMessage message={describeError(approvalsQuery.error)} />}
       {decisionMutation.isError && <ErrorMessage message={describeError(decisionMutation.error)} />}
       <ErrorMessage message={documentError} />
+      {approvalsQuery.isPending && (
+        <div className="rounded-lg bg-white p-4 shadow">
+          <SkeletonRows rows={3} />
+        </div>
+      )}
       {approvalsQuery.data?.length === 0 && <p className="rounded-lg bg-white p-4 text-sm text-slate-500 shadow">Nothing is waiting for you.</p>}
       <ul className="space-y-3">
         {approvalsQuery.data?.map((approval) => (

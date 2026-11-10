@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router";
 import { useAuth } from "../app/AuthContext";
+import { NotificationBell } from "./NotificationBell";
 
 const linkClassName = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? "bg-indigo-100 text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`;
@@ -46,6 +47,7 @@ export function Layout() {
           </NavLink>
         </nav>
         <div className="flex items-center gap-3 text-sm">
+          <NotificationBell />
           <span className="text-slate-600">
             {session.fullName} ({session.employeeId})
           </span>

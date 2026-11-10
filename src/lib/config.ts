@@ -5,7 +5,7 @@ export const API_BASE_URL: string = String(import.meta.env.VITE_API_BASE_URL ?? 
 
 export const REQUEST_TIMEOUT_MILLISECONDS = 15_000; // normal calls
 export const CHAT_TIMEOUT_MILLISECONDS = 60_000; // the assistant can take a while to answer
-export const IDLE_LOGOUT_MINUTES = 1; // log out after this much inactivity
+export const IDLE_LOGOUT_MINUTES = 30; // log out after this much inactivity
 
 // These limits mirror the backend rules, so mistakes are caught before a request is sent.
 // The backend still checks everything again.

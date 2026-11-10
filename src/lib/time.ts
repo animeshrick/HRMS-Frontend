@@ -33,3 +33,12 @@ export function formatFullTime(isoText: string): string {
   }
   return `${fullFormat.format(moment).toUpperCase().replace(" AT ", " at ")} IST`;
 }
+
+// "en-CA" formats as YYYY-MM-DD, which is what the API uses for dates and what
+// compares correctly as plain text.
+const isoDateFormat = new Intl.DateTimeFormat("en-CA", { timeZone: INDIAN_TIME_ZONE });
+
+/** Today's date in Indian time, as "YYYY-MM-DD". The backend decides the same way (leave/service.py get_today). */
+export function companyToday(now: Date = new Date()): string {
+  return isoDateFormat.format(now);
+}

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { loadMyProfile } from "../api/profile";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Loading } from "../components/Loading";
 import { describeError } from "../lib/errors";
 
 const ROLE_NAMES: Record<string, string> = { employee: "Employee", hr: "HR", ceo: "CEO", pm: "PM (project manager)" };
@@ -29,7 +30,7 @@ export function ProfilePage() {
   });
 
   if (profileQuery.isPending) {
-    return <p className="p-6 text-sm text-slate-500">Loading your profile...</p>;
+    return <Loading label="Loading your profile" />;
   }
   if (profileQuery.isError) {
     return (

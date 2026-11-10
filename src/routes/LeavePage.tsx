@@ -4,8 +4,24 @@ import { applyLeave, cancelLeave, getBalances, getMyLeaves, uploadDocument } fro
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { FormField } from "../components/FormField";
+import { SkeletonRows } from "../components/Loading";
 import { describeError } from "../lib/errors";
+import { companyToday } from "../lib/time";
 import { validateDocument } from "../lib/validation";
+import type { LeaveRequestRow } from "../api/types";
+
+// Mirrors check_cancellable in the backend (app/hr/leave/service.py): a pending leave,
+// or an approved one that has not started yet. Showing a Cancel button the server would
+// refuse only teaches people to ignore error messages.
+function canCancel(leave: LeaveRequestRow): boolean {
+  if (leave.status === "pending") {
+    return true;
+  }
+  if (leave.status !== "approved") {
+    return false;
+  }
+  return leave.start_date >= companyToday();
+}
 
 export function LeavePage() {
   const { session } = useAuth();
@@ -185,6 +201,7 @@ export function LeavePage() {
         <h2 className="mb-2 font-medium">My requests</h2>
         {leavesQuery.isError && <ErrorMessage message={describeError(leavesQuery.error)} />}
         {cancelMutation.isError && <ErrorMessage message={describeError(cancelMutation.error)} />}
+        {leavesQuery.isPending && <SkeletonRows rows={3} />}
         {leavesQuery.data?.length === 0 && <p className="text-sm text-slate-500">No leave requests yet.</p>}
         <ul className="divide-y divide-slate-100">
           {leavesQuery.data?.map((leave) => (
@@ -194,7 +211,7 @@ export function LeavePage() {
               </span>
               <span className="flex items-center gap-2">
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs capitalize">{leave.status}</span>
-                {(leave.status === "pending" || leave.status === "approved") && (
+                {canCancel(leave) && (
                   <button
                     type="button"
                     disabled={cancelMutation.isPending}
