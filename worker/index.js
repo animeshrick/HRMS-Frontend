@@ -11,7 +11,13 @@
 // This mirrors the Vite dev proxy in vite.config.ts, so the frontend code is identical
 // in development and in production: it always calls /api/...
 
-const BACKEND_ORIGIN = "http://13.239.26.128";
+// A hostname, not an IP: Cloudflare Workers cannot fetch a raw IP address.
+// Doing so returns Cloudflare error 1003 ("direct IP access not allowed"),
+// because the request gets routed back into Cloudflare's own edge.
+// AWS gives every instance this public DNS name for free, and it resolves to
+// the same 13.239.26.128. If the instance is ever stopped and started, the IP
+// changes and this hostname changes with it.
+const BACKEND_ORIGIN = "http://ec2-13-239-26-128.ap-southeast-2.compute.amazonaws.com";
 
 export default {
   async fetch(request, env) {
