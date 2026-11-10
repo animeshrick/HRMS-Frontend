@@ -6,6 +6,10 @@
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "not_found_handling": "single-page-application"
+    // Client-side routes (/login, /chat, ...) must return index.html, not a 404.
+    "not_found_handling": "single-page-application",
+    // Without this, the line above also swallows /api/* and returns index.html,
+    // so the Worker never runs. This makes /api/* hit the Worker first.
+    "run_worker_first": ["/api/*"]
   }
 }
