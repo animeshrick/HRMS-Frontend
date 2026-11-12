@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useToast } from "../components/Toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { applyLeave, cancelLeave, getBalances, getMyLeaves, uploadDocument } from "../api/leave";
 import { useAuth } from "../app/AuthContext";
@@ -29,6 +30,7 @@ export function LeavePage() {
   const token = session!.accessToken;
   const employeeId = session!.employeeId;
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   // The employee id is part of the key, so one person's cached data is never shown to another.
   const balancesQuery = useQuery({ queryKey: ["balances", employeeId], queryFn: () => getBalances(token) });
@@ -77,7 +79,10 @@ export function LeavePage() {
 
   const cancelMutation = useMutation({
     mutationFn: (leaveId: number) => cancelLeave(token, leaveId),
-    onSuccess: refreshLeaveData,
+    onSuccess: () => {
+      toast.success("Leave cancelled");
+      refreshLeaveData();
+    },
   });
 
   function handleSubmit(event: FormEvent) {
@@ -120,33 +125,33 @@ export function LeavePage() {
           </div>
         )}
         {balances.map((balance) => (
-          <div key={balance.type_code} className="rounded-lg bg-white p-4 shadow">
-            <p className="text-sm font-medium text-slate-700">{balance.type_name}</p>
+          <div key={balance.type_code} className="rounded-lg bg-surface p-4 ">
+            <p className="text-sm font-medium text-ink-2">{balance.type_name}</p>
             {balance.limit_type === "per_year" ? (
               <>
                 <p className="mt-1 text-2xl font-semibold">{balance.remaining_days} left</p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-ink-3">
                   of {balance.days_allowed} a year. Used {balance.used_days}, waiting {balance.pending_days}.
                 </p>
               </>
             ) : (
-              <p className="mt-1 text-sm text-slate-600">Up to {balance.days_allowed} days per request. Apply here with a document.</p>
+              <p className="mt-1 text-sm text-ink-2">Up to {balance.days_allowed} days per request. Apply here with a document.</p>
             )}
           </div>
         ))}
       </section>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-3 rounded-lg bg-white p-5 shadow">
+      <form onSubmit={handleSubmit} noValidate className="space-y-3 rounded-lg bg-surface p-5 ">
         <h2 className="font-medium">Apply for leave</h2>
         <div>
-          <label htmlFor="leave-type" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="leave-type" className="block text-sm font-medium text-ink-2">
             Leave type
           </label>
           <select
             id="leave-type"
             value={leaveType}
             onChange={(event) => setLeaveType(event.target.value)}
-            className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 text-sm"
           >
             <option value="">Choose...</option>
             {balances.map((balance) => (
@@ -177,7 +182,7 @@ export function LeavePage() {
         </fieldset>
         <FormField label="Reason (optional)" value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} />
         <div>
-          <label htmlFor="leave-document" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="leave-document" className="block text-sm font-medium text-ink-2">
             {documentIsRequired ? "Supporting document (required, PDF, PNG or JPG, up to 5 MB)" : "Related document (optional)"}
           </label>
           <input
@@ -190,42 +195,42 @@ export function LeavePage() {
         </div>
         <ErrorMessage message={formError ?? (applyMutation.isError ? describeError(applyMutation.error) : null)} />
         {successMessage && (
-          <p role="status" className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+          <p role="status" className="rounded-md border border-ok/30 bg-ok-soft px-3 py-2 text-sm text-ok">
             {successMessage}
           </p>
         )}
         <button
           type="submit"
           disabled={applyMutation.isPending}
-          className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
         >
           {applyMutation.isPending ? "Sending..." : "Submit"}
         </button>
       </form>
 
-      <section aria-label="My leave requests" className="rounded-lg bg-white p-5 shadow">
+      <section aria-label="My leave requests" className="rounded-lg bg-surface p-5 ">
         <h2 className="mb-2 font-medium">My requests</h2>
         {leavesQuery.isError && <ErrorMessage message={describeError(leavesQuery.error)} />}
         {cancelMutation.isError && <ErrorMessage message={describeError(cancelMutation.error)} />}
         {leavesQuery.isPending && <SkeletonRows rows={3} />}
-        {leavesQuery.data?.length === 0 && <p className="text-sm text-slate-500">No leave requests yet.</p>}
-        <ul className="divide-y divide-slate-100">
+        {leavesQuery.data?.length === 0 && <p className="text-sm text-ink-3">No leave requests yet.</p>}
+        <ul className="divide-y divide-line">
           {leavesQuery.data?.map((leave) => (
             <li key={leave.id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0">
                 <span className="block">
                   #{leave.id} {leave.description}
                 </span>
-                {decisionSummary(leave) && <span className="block text-xs text-slate-500">{decisionSummary(leave)}</span>}
+                {decisionSummary(leave) && <span className="block text-xs text-ink-3">{decisionSummary(leave)}</span>}
               </span>
               <span className="flex items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs capitalize">{leave.status}</span>
+                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs capitalize">{leave.status}</span>
                 {canCancel(leave) && (
                   <button
                     type="button"
                     disabled={cancelMutation.isPending}
                     onClick={() => cancelMutation.mutate(leave.id)}
-                    className="text-xs text-red-600 underline disabled:opacity-60"
+                    className="text-xs text-bad underline disabled:opacity-60"
                   >
                     {cancelMutation.isPending && cancelMutation.variables === leave.id ? "Cancelling..." : "Cancel"}
                   </button>

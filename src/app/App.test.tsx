@@ -6,7 +6,8 @@ import { renderWithProviders, storeSession } from "../test/renderWithProviders";
 
 // Requests the layout makes by itself on every page (the notification bell). They are answered
 // separately so they never consume a reply the test queued for its own calls.
-const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine"];
+const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations"];
+const EMPTY_MONTH = { summary: { present: 0, half_day: 0, late_days: 0 }, days: [] };
 
 function isBackground(url: unknown) {
   return BACKGROUND_PATHS.some((path) => String(url).replace(/^\/api/, "").startsWith(path));
@@ -21,7 +22,7 @@ function mockFetchSequence(...responses: Array<{ status: number; body: unknown }
   const queued = [...responses];
   const fetchMock = vi.fn(async (url: string) => {
     if (isBackground(url)) {
-      return new Response(JSON.stringify([]), { status: 200 });
+      return new Response(JSON.stringify(String(url).includes("/attendance/mine") ? EMPTY_MONTH : String(url).includes("/attendance/today") ? {} : []), { status: 200 });
     }
     const next = queued.shift();
     return next
@@ -49,7 +50,7 @@ describe("route guards", () => {
   it("keeps non-HR users out of the admin page", () => {
     storeSession({ role: "employee" });
     renderWithProviders(<App />, "/admin");
-    expect(screen.getByRole("heading", { name: /Ask about company HR policies/ })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Only HR can open the HR admin page.");
   });
 
   it("shows the admin page and link to HR", () => {
@@ -77,7 +78,7 @@ describe("login", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Invalid employee ID or password.");
   });
 
-  it("goes to the chat after a successful login", async () => {
+  it("goes to the home page after a successful login", async () => {
     mockFetchSequence({
       status: 200,
       body: { access_token: "t", token_type: "bearer", must_change_password: false, role: "employee", full_name: "Ananya Das", emp_id: "EMP003" },
@@ -86,7 +87,7 @@ describe("login", () => {
     await userEvent.type(screen.getByLabelText("Employee ID"), "EMP003");
     await userEvent.type(screen.getByLabelText("Password"), "secret");
     await userEvent.click(screen.getByRole("button", { name: "Log in" }));
-    expect(await screen.findByRole("heading", { name: /Ask about company HR policies/ })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /^Good (morning|afternoon|evening),/ })).toBeInTheDocument();
   });
 });
 

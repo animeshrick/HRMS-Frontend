@@ -3,6 +3,8 @@ import { Layout } from "../components/Layout";
 import { AdminPage } from "../routes/AdminPage";
 import { AttendancePage } from "../routes/AttendancePage";
 import { AttendanceTeamPage } from "../routes/AttendanceTeamPage";
+import { HomePage } from "../routes/HomePage";
+import { SuperadminPage } from "../routes/SuperadminPage";
 import { ApprovalsPage } from "../routes/ApprovalsPage";
 import { ChangePasswordPage } from "../routes/ChangePasswordPage";
 import { ChatPage } from "../routes/ChatPage";
@@ -10,7 +12,7 @@ import { LeavePage } from "../routes/LeavePage";
 import { LoginPage } from "../routes/LoginPage";
 import { NotFoundPage } from "../routes/NotFoundPage";
 import { ProfilePage } from "../routes/ProfilePage";
-import { RequireAttendance, RequireAttendanceManager, RequireHr, RequireLogin } from "./RouteGuards";
+import { RequireAttendance, RequireAttendanceManager, RequireHr, RequireLogin, RequireOwnWork, RequireSuperadmin } from "./RouteGuards";
 
 export function App() {
   return (
@@ -18,11 +20,16 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<RequireLogin />}>
         <Route element={<Layout />}>
+          <Route path="/home" element={<HomePage />} />
           <Route path="/chat" element={<ChatPage />} />
-          <Route path="/leave" element={<LeavePage />} />
+          <Route element={<RequireOwnWork />}>
+            <Route path="/leave" element={<LeavePage />} />
+          </Route>
           <Route path="/approvals" element={<ApprovalsPage />} />
           <Route element={<RequireAttendance />}>
-            <Route path="/attendance" element={<AttendancePage />} />
+            <Route element={<RequireOwnWork />}>
+              <Route path="/attendance" element={<AttendancePage />} />
+            </Route>
             <Route element={<RequireAttendanceManager />}>
               <Route path="/attendance/team" element={<AttendanceTeamPage />} />
             </Route>
@@ -32,9 +39,12 @@ export function App() {
           <Route element={<RequireHr />}>
             <Route path="/admin" element={<AdminPage />} />
           </Route>
+          <Route element={<RequireSuperadmin />}>
+            <Route path="/superadmin" element={<SuperadminPage />} />
+          </Route>
         </Route>
       </Route>
-      <Route path="/" element={<Navigate to="/chat" replace />} />
+      <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

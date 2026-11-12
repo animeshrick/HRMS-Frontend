@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from "../components/Toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { AttendanceCorrection } from "../api/types";
 import { decideCorrection, getCorrectionInbox, getPersonMonth, getTeamDay } from "../api/attendance";
@@ -14,6 +15,7 @@ export function AttendanceTeamPage() {
   const token = session!.accessToken;
   const employeeId = session!.employeeId;
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [day, setDay] = useState<string | null>(null); // null = today
   const [openPerson, setOpenPerson] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<number | null>(null); // the request whose rejection comment is being written
@@ -31,6 +33,7 @@ export function AttendanceTeamPage() {
   const decisionMutation = useMutation({
     mutationFn: (input: { id: number; decision: "approved" | "rejected"; note?: string }) => decideCorrection(token, input.id, input.decision, input.note),
     onSuccess: (_decided, input) => {
+      toast.success(input.decision === "approved" ? "Correction approved" : "Correction rejected");
       // Take the decided request off the list at once, without waiting for the list to load again.
       queryClient.setQueryData<AttendanceCorrection[]>(["attendance-inbox", employeeId], (waiting) => waiting?.filter((correction) => correction.id !== input.id));
       setRejectingId(null);
@@ -49,13 +52,13 @@ export function AttendanceTeamPage() {
     <div className="mx-auto max-w-4xl space-y-6 overflow-y-auto px-4 py-6">
       <h1 className="text-xl font-semibold">Team attendance</h1>
 
-      <section className="rounded-lg bg-white p-4 shadow" aria-label="Correction requests">
+      <section className="rounded-lg bg-surface p-4 " aria-label="Correction requests">
         <h2 className="mb-2 font-medium">Waiting correction requests</h2>
         {inboxQuery.isError && <ErrorMessage message={describeError(inboxQuery.error)} />}
         {decisionMutation.isError && <ErrorMessage message={describeError(decisionMutation.error)} />}
         {inboxQuery.isPending && <Loading fill="inline" label="Loading requests" delayMilliseconds={300} />}
-        {inboxQuery.data?.length === 0 && <p className="text-sm text-slate-500">Nothing is waiting for you.</p>}
-        <ul className="divide-y divide-slate-100 text-sm">
+        {inboxQuery.data?.length === 0 && <p className="text-sm text-ink-3">Nothing is waiting for you.</p>}
+        <ul className="divide-y divide-line text-sm">
           {inboxQuery.data?.map((correction) => (
             <li key={correction.id} className="py-2">
               <div className="flex items-center justify-between gap-3">
@@ -63,13 +66,13 @@ export function AttendanceTeamPage() {
                 <p className="truncate font-medium">
                   {correction.full_name} ({correction.emp_id}) | {formatDayLabel(correction.work_date)}
                 </p>
-                <p className="text-slate-700">
+                <p className="text-ink-2">
                   Now: In {formatClock(correction.current_check_in_at) || "-"}, Out {formatClock(correction.current_check_out_at) || "-"} | Asks:
                   {correction.requested_check_in ? ` In ${formatClock(correction.requested_check_in)}` : ""}
                   {correction.requested_check_in && correction.requested_check_out ? "," : ""}
                   {correction.requested_check_out ? ` Out ${formatClock(correction.requested_check_out)}` : ""}
                 </p>
-                <p className="truncate text-slate-500" title={correction.reason}>
+                <p className="truncate text-ink-3" title={correction.reason}>
                   Reason: {correction.reason}
                 </p>
               </div>
@@ -78,7 +81,7 @@ export function AttendanceTeamPage() {
                   type="button"
                   disabled={decisionMutation.isPending}
                   onClick={() => decisionMutation.mutate({ id: correction.id, decision: "approved" })}
-                  className="rounded-md bg-green-600 px-3 py-1 font-medium text-white hover:bg-green-500 disabled:opacity-60"
+                  className="rounded-md bg-ok px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
                 >
                   Approve
                 </button>
@@ -89,7 +92,7 @@ export function AttendanceTeamPage() {
                     setRejectingId(correction.id);
                     setRejectNote("");
                   }}
-                  className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
+                  className="rounded-md bg-bad px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
                 >
                   Reject
                 </button>
@@ -104,17 +107,17 @@ export function AttendanceTeamPage() {
                     value={rejectNote}
                     maxLength={300}
                     onChange={(event) => setRejectNote(event.target.value)}
-                    className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1"
+                    className="min-w-0 flex-1 rounded-md border border-line px-2 py-1"
                   />
                   <button
                     type="button"
                     disabled={decisionMutation.isPending || rejectNote.trim() === ""}
                     onClick={() => decisionMutation.mutate({ id: correction.id, decision: "rejected", note: rejectNote.trim() })}
-                    className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
+                    className="rounded-md bg-bad px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
                   >
                     {decisionMutation.isPending ? "Rejecting..." : "Confirm rejection"}
                   </button>
-                  <button type="button" onClick={() => setRejectingId(null)} className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100">
+                  <button type="button" onClick={() => setRejectingId(null)} className="rounded-md border border-line px-3 py-1 hover:bg-surface-2">
                     Cancel
                   </button>
                 </div>
@@ -124,7 +127,7 @@ export function AttendanceTeamPage() {
         </ul>
       </section>
 
-      <section className="rounded-lg bg-white p-4 shadow" aria-label="Day">
+      <section className="rounded-lg bg-surface p-4 " aria-label="Day">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-medium">Day</h2>
           <input
@@ -132,18 +135,18 @@ export function AttendanceTeamPage() {
             aria-label="Day"
             value={shownDay}
             onChange={(event) => setDay(event.target.value || null)}
-            className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+            className="rounded-md border border-line px-2 py-1 text-sm"
           />
         </div>
         {teamQuery.isError && <ErrorMessage message={describeError(teamQuery.error)} />}
         {teamQuery.isPending && <Loading fill="inline" label="Loading the team" delayMilliseconds={300} />}
         {summary && (
-          <p className="mb-2 text-sm text-slate-700">
+          <p className="mb-2 text-sm text-ink-2">
             Present {summary.present}, half day {summary.half_day}, absent {summary.absent}, on leave {summary.on_leave}, late {summary.late_days}.
           </p>
         )}
         <table className="w-full text-left text-sm">
-          <thead className="text-slate-500">
+          <thead className="text-ink-3">
             <tr>
               <th className="py-1 pr-3">Name</th>
               <th className="pr-3">Status</th>
@@ -154,17 +157,17 @@ export function AttendanceTeamPage() {
           </thead>
           <tbody>
             {teamQuery.data?.people.map((person) => (
-              <tr key={person.emp_id} className="border-t border-slate-100">
+              <tr key={person.emp_id} className="border-t border-line">
                 <td className="py-1 pr-3">
-                  <button type="button" className="text-indigo-700 hover:underline" onClick={() => setOpenPerson(openPerson === person.emp_id ? null : person.emp_id)}>
+                  <button type="button" className="text-brand hover:underline" onClick={() => setOpenPerson(openPerson === person.emp_id ? null : person.emp_id)}>
                     {person.full_name}
                   </button>
-                  <span className="ml-1 text-xs text-slate-500">{person.emp_id}</span>
+                  <span className="ml-1 text-xs text-ink-3">{person.emp_id}</span>
                 </td>
                 <td className="pr-3">
                   {statusText(person.status)}
                   <DayMarks day={person} />
-                  {person.note && <span className="ml-1 text-xs text-slate-500">({person.note})</span>}
+                  {person.note && <span className="ml-1 text-xs text-ink-3">({person.note})</span>}
                 </td>
                 <td className="pr-3">{formatClock(person.check_in_at)}</td>
                 <td className="pr-3">{formatClock(person.check_out_at)}</td>
@@ -176,7 +179,7 @@ export function AttendanceTeamPage() {
       </section>
 
       {openPerson && (
-        <section className="rounded-lg bg-white p-4 shadow" aria-label="Person month">
+        <section className="rounded-lg bg-surface p-4 " aria-label="Person month">
           {personQuery.isPending && personQuery.fetchStatus !== "idle" && <Loading fill="inline" label="Loading the month" delayMilliseconds={300} />}
           {personQuery.isError && <ErrorMessage message={describeError(personQuery.error)} />}
           {personQuery.data && (

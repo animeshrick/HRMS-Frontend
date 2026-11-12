@@ -198,11 +198,11 @@ describe("team attendance page", () => {
     await waitFor(() => expect(screen.queryByText(/Ann Employee \(EMP003\)/)).not.toBeInTheDocument()); // a decided request leaves the waiting list
   });
 
-  it("sends an employee away from the team page", async () => {
+  it("tells an employee the team page is not for them", async () => {
     storeSession();
     mockRoutes(EMPLOYEE_ROUTES);
     renderWithProviders(<App />, "/attendance/team");
-    expect(await screen.findByRole("heading", { name: "Attendance" })).toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("Only HR, project managers and the super admin can see team attendance.");
   });
 });
 

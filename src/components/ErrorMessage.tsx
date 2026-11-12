@@ -3,7 +3,7 @@ export function ErrorMessage({ message }: { message: string | null }) {
     return null;
   }
   return (
-    <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+    <p role="alert" className="rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 text-sm text-bad">
       {message}
     </p>
   );

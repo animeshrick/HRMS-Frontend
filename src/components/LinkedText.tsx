@@ -8,7 +8,7 @@ export function LinkedText({ text }: { text: string }) {
     <>
       {parts.map((part, index) =>
         index % 2 === 1 ? (
-          <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="break-all text-indigo-600 underline">
+          <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="break-all text-brand underline">
             {part}
           </a>
         ) : (

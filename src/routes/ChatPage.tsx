@@ -151,11 +151,11 @@ export function ChatPage() {
 
   return (
     <div className="mx-auto flex h-full max-w-3xl flex-col px-4">
-      <div className="flex-1 space-y-4 overflow-y-auto py-4" aria-live="polite">
+      <div className="flex-1 space-y-4 no-scrollbar overflow-y-auto py-4" aria-live="polite">
         {messages.length === 0 && (
           <div className="mt-10 text-center">
             <h1 className="text-lg font-semibold">Ask about company HR policies</h1>
-            <p className="mt-1 text-sm text-slate-600">Try one of these:</p>
+            <p className="mt-1 text-sm text-ink-2">Try one of these:</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {STARTER_QUESTIONS.map((starterQuestion) => (
                 <button
@@ -163,7 +163,7 @@ export function ChatPage() {
                   type="button"
                   disabled={isWaiting}
                   onClick={() => void sendQuestion(starterQuestion, true)}
-                  className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm hover:bg-slate-100 disabled:opacity-60"
+                  className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-60"
                 >
                   {starterQuestion}
                 </button>
@@ -179,7 +179,7 @@ export function ChatPage() {
             <MessageBubble message={message} isBusy={isWaiting} onRetry={(question) => void sendQuestion(question, false)} />
             {/* The time is small, in Indian time. The mouse over it shows the full date and the seconds. */}
             {message.createdAt && message.author !== "error" && (
-              <p className={`text-xs text-slate-400 ${message.author === "user" ? "text-right" : "text-left"}`}>
+              <p className={`text-xs text-ink-3 ${message.author === "user" ? "text-right" : "text-left"}`}>
                 <time dateTime={message.createdAt} title={formatFullTime(message.createdAt)}>
                   {formatShortTime(message.createdAt)}
                 </time>
@@ -197,13 +197,13 @@ export function ChatPage() {
         ))}
 
         {isWaiting && (
-          <div className="flex items-center gap-3 text-sm text-slate-500">
-            <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
+          <div className="flex items-center gap-3 text-sm text-ink-3">
+            <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand" />
             <span>Thinking...</span>
             <button
               type="button"
               onClick={() => abortControllerReference.current?.abort()}
-              className="rounded-md border border-slate-300 px-2 py-0.5 hover:bg-slate-100"
+              className="rounded-md border border-line px-2 py-0.5 hover:bg-surface-2"
             >
               Cancel
             </button>
@@ -212,9 +212,9 @@ export function ChatPage() {
         <div ref={bottomReference} />
       </div>
 
-      <form onSubmit={handleSubmit} className="border-t border-slate-200 py-3">
+      <form onSubmit={handleSubmit} className="border-t border-line py-3">
         {validationMessage && (
-          <p role="alert" className="mb-1 text-sm text-red-600">
+          <p role="alert" className="mb-1 text-sm text-bad">
             {validationMessage}
           </p>
         )}
@@ -226,17 +226,17 @@ export function ChatPage() {
             onKeyDown={handleKeyDown}
             rows={2}
             placeholder="Type your question and press Enter"
-            className="block flex-1 resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="block flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
           />
           <button
             type="submit"
             disabled={isWaiting}
-            className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
           >
             Send
           </button>
         </div>
-        <p className="mt-1 text-right text-xs text-slate-400">
+        <p className="mt-1 text-right text-xs text-ink-3">
           {draftQuestion.length}/{MAXIMUM_QUESTION_LENGTH}
         </p>
       </form>
@@ -254,7 +254,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   if (message.author === "user") {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[80%] whitespace-pre-wrap rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white">{message.text}</p>
+        <p className="max-w-[80%] whitespace-pre-wrap rounded-lg bg-brand px-3 py-2 text-sm text-brand-ink">{message.text}</p>
       </div>
     );
   }
@@ -262,7 +262,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   if (message.author === "error") {
     return (
       <div className="flex justify-start">
-        <div role="alert" className="max-w-[80%] rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div role="alert" className="max-w-[80%] rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 text-sm text-bad">
           <p>{message.text}</p>
           {message.failedQuestion && (
             <button
@@ -285,14 +285,14 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
     <div className="flex justify-start">
       <div
         className={`max-w-[80%] rounded-lg border px-3 py-2 text-sm ${
-          isUnanswerable ? "border-slate-200 bg-slate-100 text-slate-600" : "border-slate-200 bg-white text-slate-900"
+          isUnanswerable ? "border-line bg-surface-2 text-ink-2" : "border-line bg-surface text-ink"
         }`}
       >
         <p className="whitespace-pre-wrap">
           <LinkedText text={message.text} />
         </p>
         {sources.length > 0 && (
-          <details className="mt-2 text-xs text-slate-500">
+          <details className="mt-2 text-xs text-ink-3">
             <summary className="cursor-pointer">Sources ({sources.length})</summary>
             <ul className="mt-1 space-y-1">
               {sources.map((source) => (
@@ -345,7 +345,7 @@ function PendingActionBar({ token, action, onAnswer }: PendingActionBarProps) {
         type="button"
         disabled={uploadState.kind === "busy"}
         onClick={() => onAnswer("Yes")}
-        className="rounded-md bg-green-600 px-3 py-1 font-medium text-white hover:bg-green-500 disabled:opacity-60"
+        className="rounded-md bg-ok px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
       >
         Yes, confirm
       </button>
@@ -353,12 +353,12 @@ function PendingActionBar({ token, action, onAnswer }: PendingActionBarProps) {
         type="button"
         disabled={uploadState.kind === "busy"}
         onClick={() => onAnswer("No")}
-        className="rounded-md border border-slate-300 bg-white px-3 py-1 hover:bg-slate-100 disabled:opacity-60"
+        className="rounded-md border border-line bg-surface px-3 py-1 hover:bg-surface-2 disabled:opacity-60"
       >
         No, cancel
       </button>
       {action.allows_document && (
-        <label className="flex items-center gap-2 text-slate-600">
+        <label className="flex items-center gap-2 text-ink-2">
           <span>Related document (optional)</span>
           <input
             type="file"
@@ -369,7 +369,7 @@ function PendingActionBar({ token, action, onAnswer }: PendingActionBarProps) {
         </label>
       )}
       {uploadState.text && (
-        <span role={uploadState.kind === "error" ? "alert" : "status"} className={uploadState.kind === "error" ? "text-red-600" : "text-slate-600"}>
+        <span role={uploadState.kind === "error" ? "alert" : "status"} className={uploadState.kind === "error" ? "text-bad" : "text-ink-2"}>
           {uploadState.text}
         </span>
       )}

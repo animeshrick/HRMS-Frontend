@@ -30,9 +30,9 @@ export function Loading({ label = "Loading", fill = "page", delayMilliseconds = 
       <div className="flex flex-col items-center gap-3">
         <span
           aria-hidden="true"
-          className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600"
+          className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand"
         />
-        <span className="text-sm text-slate-500">{label}</span>
+        <span className="text-sm text-ink-3">{label}</span>
       </div>
     </div>
   );
@@ -41,11 +41,11 @@ export function Loading({ label = "Loading", fill = "page", delayMilliseconds = 
 /** A grey placeholder line, for lists that are still loading. */
 export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   return (
-    <ul className="divide-y divide-slate-100" aria-hidden="true">
+    <ul className="divide-y divide-line" aria-hidden="true">
       {Array.from({ length: rows }, (_, index) => (
         <li key={index} className="flex items-center justify-between gap-3 py-3">
-          <span className="h-3 w-2/5 animate-pulse rounded bg-slate-100" />
-          <span className="h-3 w-16 animate-pulse rounded bg-slate-100" />
+          <span className="h-3 w-2/5 animate-pulse rounded bg-surface-2" />
+          <span className="h-3 w-16 animate-pulse rounded bg-surface-2" />
         </li>
       ))}
     </ul>

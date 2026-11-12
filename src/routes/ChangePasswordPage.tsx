@@ -39,10 +39,10 @@ export function ChangePasswordPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-10">
-      <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-lg bg-white p-6 shadow">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4 rounded-lg bg-surface p-6 ">
         <h1 className="text-xl font-semibold">Change password</h1>
         {session?.mustChangePassword && (
-          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <p className="rounded-md border border-warn/30 bg-warn-soft px-3 py-2 text-sm text-warn">
             You are using a temporary password. Choose a new one to continue.
           </p>
         )}
@@ -74,7 +74,7 @@ export function ChangePasswordPage() {
         <button
           type="submit"
           disabled={changeMutation.isPending}
-          className="w-full rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+          className="w-full rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
         >
           {changeMutation.isPending ? "Saving..." : "Change password"}
         </button>

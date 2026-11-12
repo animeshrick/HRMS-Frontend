@@ -39,7 +39,7 @@ export function TimeField({ label, value, onChange }: TimeFieldProps) {
     onChange(joinValue(next.hour, next.minute, next.period));
   }
 
-  const selectClassName = "rounded-md border border-slate-300 px-1 py-1";
+  const selectClassName = "rounded-md border border-line px-1 py-1";
   return (
     <fieldset className="flex flex-col gap-1">
       <legend className="mb-1">{label}</legend>

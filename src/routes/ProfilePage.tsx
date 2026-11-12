@@ -5,7 +5,7 @@ import { ErrorMessage } from "../components/ErrorMessage";
 import { Loading } from "../components/Loading";
 import { describeError } from "../lib/errors";
 
-const ROLE_NAMES: Record<string, string> = { employee: "Employee", hr: "HR", ceo: "CEO", pm: "PM (project manager)" };
+const ROLE_NAMES: Record<string, string> = { employee: "Employee", hr: "HR", superadmin: "Super admin", ceo: "CEO", pm: "PM (project manager)" };
 
 /** "2022-01-03" becomes "03 Jan 2022". Anything that is not a date is shown as it is. */
 function formatDate(dateText: string | null): string {
@@ -59,12 +59,12 @@ export function ProfilePage() {
   return (
     <div className="mx-auto max-w-2xl overflow-y-auto p-6">
       <h1 className="text-lg font-semibold">{profile.full_name}</h1>
-      <p className="text-sm text-slate-600">Your profile. To change any detail, please ask HR.</p>
-      <dl className="mt-4 divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      <p className="text-sm text-ink-2">Your profile. To change any detail, please ask HR.</p>
+      <dl className="mt-4 divide-y divide-line rounded-lg border border-line bg-surface">
         {details.map(([label, value]) => (
           <div key={label} className="grid grid-cols-3 gap-3 px-4 py-2 text-sm">
-            <dt className="font-medium text-slate-600">{label}</dt>
-            <dd className="col-span-2 text-slate-900">{value}</dd>
+            <dt className="font-medium text-ink-2">{label}</dt>
+            <dd className="col-span-2 text-ink">{value}</dd>
           </div>
         ))}
       </dl>

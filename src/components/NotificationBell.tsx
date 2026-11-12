@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import { getMyCorrections } from "../api/attendance";
 import { getMyLeaves } from "../api/leave";
 import { useAuth } from "../app/AuthContext";
+import { describeError } from "../lib/errors";
 import { correctionSummary, decisionSummary, isCorrectionDecided, isDecided, readSeenIds, writeSeenIds } from "../lib/decisions";
 import { formatDayLabel } from "../lib/time";
 
@@ -111,7 +112,7 @@ export function NotificationBell() {
         onClick={openPanel}
         aria-label={badgeLabel}
         aria-expanded={isOpen}
-        className="relative rounded-md p-1.5 text-slate-600 hover:bg-slate-100"
+        className="relative rounded-md p-1.5 text-ink-2 hover:bg-surface-2"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true">
           <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
@@ -120,17 +121,22 @@ export function NotificationBell() {
         {unseenCount > 0 && (
           <span
             aria-hidden="true"
-            className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"
+            className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-bad ring-2 ring-surface"
           />
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
-          {decided.length > 0 && <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-slate-500">Leave decisions</p>}
-          {decided.length === 0 && decidedCorrections.length === 0 && <p className="px-2 py-3 text-sm text-slate-500">Nothing decided yet.</p>}
+        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-line bg-surface p-2 shadow-lg">
+          {(leavesQuery.isError || correctionsQuery.isError) && (
+            <p role="alert" className="px-2 py-2 text-sm text-bad">
+              Could not load your notifications. {describeError(leavesQuery.error ?? correctionsQuery.error)}
+            </p>
+          )}
+          {decided.length > 0 && <p className="px-2 py-1 text-xs font-medium text-ink-3">Leave decisions</p>}
+          {decided.length === 0 && decidedCorrections.length === 0 && <p className="px-2 py-3 text-sm text-ink-3">Nothing decided yet.</p>}
           {decided.length > 0 && (
-            <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
+            <ul className="max-h-80 divide-y divide-line overflow-y-auto">
               {decided.slice(0, 10).map((leave) => (
                 <li key={leave.id}>
                   <button
@@ -139,15 +145,15 @@ export function NotificationBell() {
                       setIsOpen(false);
                       navigate("/leave");
                     }}
-                    className="flex w-full items-start gap-2 px-2 py-2 text-left hover:bg-slate-50"
+                    className="flex w-full items-start gap-2 px-2 py-2 text-left hover:bg-canvas"
                   >
                     <span
                       aria-hidden="true"
-                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${leave.status === "approved" ? "bg-green-500" : "bg-red-500"}`}
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${leave.status === "approved" ? "bg-ok" : "bg-bad"}`}
                     />
                     <span className="min-w-0">
-                      <span className="block truncate text-sm text-slate-800">{leave.description}</span>
-                      <span className={`block text-xs ${leave.status === "approved" ? "text-green-700" : "text-red-700"}`}>
+                      <span className="block truncate text-sm text-ink">{leave.description}</span>
+                      <span className={`block text-xs ${leave.status === "approved" ? "text-ok" : "text-bad"}`}>
                         {decisionSummary(leave)}
                       </span>
                     </span>
@@ -158,8 +164,8 @@ export function NotificationBell() {
           )}
           {decidedCorrections.length > 0 && (
             <>
-              <p className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-slate-500">Attendance corrections</p>
-              <ul className="max-h-80 divide-y divide-slate-100 overflow-y-auto">
+              <p className="px-2 py-1 text-xs font-medium text-ink-3">Attendance corrections</p>
+              <ul className="max-h-80 divide-y divide-line overflow-y-auto">
                 {decidedCorrections.slice(0, 10).map((correction) => (
                   <li key={`correction-${correction.id}`}>
                     <button
@@ -168,15 +174,15 @@ export function NotificationBell() {
                         setIsOpen(false);
                         navigate("/attendance");
                       }}
-                      className="flex w-full items-start gap-2 px-2 py-2 text-left hover:bg-slate-50"
+                      className="flex w-full items-start gap-2 px-2 py-2 text-left hover:bg-canvas"
                     >
                       <span
                         aria-hidden="true"
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${correction.status === "approved" ? "bg-green-500" : "bg-red-500"}`}
+                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${correction.status === "approved" ? "bg-ok" : "bg-bad"}`}
                       />
                       <span className="min-w-0">
-                        <span className="block truncate text-sm text-slate-800">Correction for {formatDayLabel(correction.work_date)}</span>
-                        <span className={`block text-xs ${correction.status === "approved" ? "text-green-700" : "text-red-700"}`}>
+                        <span className="block truncate text-sm text-ink">Correction for {formatDayLabel(correction.work_date)}</span>
+                        <span className={`block text-xs ${correction.status === "approved" ? "text-ok" : "text-bad"}`}>
                           {correctionSummary(correction)}
                         </span>
                       </span>

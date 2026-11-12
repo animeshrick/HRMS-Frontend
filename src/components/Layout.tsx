@@ -1,78 +1,203 @@
+import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, Outlet } from "react-router";
-import { useAuth } from "../app/AuthContext";
+import { useAuth, type Session } from "../app/AuthContext";
+import { getTheme, setTheme, type Theme } from "../lib/theme";
+import {
+  ApprovalIcon,
+  ChatIcon,
+  ClockIcon,
+  CloseIcon,
+  HomeIcon,
+  KeyIcon,
+  LeaveIcon,
+  LogoutIcon,
+  MenuIcon,
+  MoonIcon,
+  ShieldIcon,
+  SunIcon,
+  TeamIcon,
+  UserIcon,
+} from "./icons";
 import { NotificationBell } from "./NotificationBell";
+import { ToastProvider } from "./Toast";
 
-const linkClassName = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? "bg-indigo-100 text-indigo-800" : "text-slate-600 hover:bg-slate-100"}`;
+interface NavItem {
+  to: string;
+  label: string;
+  icon: ReactNode;
+  end?: boolean;
+}
+
+/** The sidebar links this person may use, in groups. A person with a temporary password gets only the change-password page. */
+function buildNavigation(session: Session): { title: string; items: NavItem[] }[] {
+  if (session.mustChangePassword) {
+    return [{ title: "Account", items: [{ to: "/change-password", label: "Change password", icon: <KeyIcon /> }] }];
+  }
+  const canManageAttendance = ["superadmin", "hr", "pm"].includes(session.attendanceAccess);
+  const isSuperadmin = session.role === "superadmin"; // an admin account only: no leave and no check-in of its own
+  const work: NavItem[] = [
+    { to: "/home", label: "Home", icon: <HomeIcon /> },
+    { to: "/chat", label: "Chat", icon: <ChatIcon /> },
+  ];
+  if (!isSuperadmin) {
+    work.push({ to: "/leave", label: "Leave", icon: <LeaveIcon /> });
+  }
+  if (!isSuperadmin && session.attendanceAccess !== "none") {
+    work.push({ to: "/attendance", label: "Attendance", icon: <ClockIcon />, end: true });
+  }
+  const manage: NavItem[] = [{ to: "/approvals", label: "Approvals", icon: <ApprovalIcon /> }];
+  if (canManageAttendance) {
+    manage.push({ to: "/attendance/team", label: "Team attendance", icon: <TeamIcon /> });
+  }
+  if (session.role === "hr" || session.role === "superadmin") {
+    manage.push({ to: "/admin", label: "HR admin", icon: <ShieldIcon /> });
+  }
+  if (session.role === "superadmin") {
+    manage.push({ to: "/superadmin", label: "Super admin", icon: <ShieldIcon /> });
+  }
+  return [
+    { title: "Workspace", items: work },
+    { title: "Manage", items: manage },
+    { title: "Account", items: [{ to: "/me", label: "My profile", icon: <UserIcon /> }, { to: "/change-password", label: "Change password", icon: <KeyIcon /> }] },
+  ];
+}
+
+const ROLE_NAMES: Record<string, string> = { superadmin: "Super admin", hr: "HR", pm: "Project manager", ceo: "CEO", employee: "Employee" };
+
+function initialsOf(fullName: string): string {
+  return fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]!.toUpperCase()).join("");
+}
+
+function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavigate?: () => void; onSignOut: () => void }) {
+  const groups = buildNavigation(session);
+  return (
+    <div className="flex h-full w-64 flex-col bg-side text-side-ink">
+      <div className="flex items-center gap-3 px-5 py-5">
+        <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-ink">
+          H
+        </span>
+        <span className="text-base font-semibold text-white">HR Assistant</span>
+      </div>
+      <nav aria-label="Main" className="min-h-0 flex-1 space-y-5 overflow-y-auto px-3 py-2">
+        {groups.map((group) => (
+          <div key={group.title}>
+            <p className="px-3 pb-1 text-xs text-side-ink/60">{group.title}</p>
+            <ul className="space-y-0.5">
+              {group.items.map((item) => (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.end}
+                    onClick={onNavigate}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                        isActive ? "bg-side-active text-white" : "text-side-ink hover:bg-side-active/60"
+                      }`
+                    }
+                  >
+                    {item.icon}
+                    {item.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+      <div className="border-t border-side-line p-3">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-side-active text-sm font-semibold text-white">
+            {initialsOf(session.fullName)}
+          </span>
+          <div className="min-w-0 text-sm">
+            <p className="truncate font-medium text-white">{session.fullName}</p>
+            <p className="truncate text-xs text-side-ink/70">
+              {session.employeeId}, {ROLE_NAMES[session.role] ?? session.role}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onSignOut}
+          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-side-ink transition hover:bg-side-active/60"
+        >
+          <LogoutIcon />
+          Log out
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function Layout() {
   const { session, signOut } = useAuth();
+  const [theme, setThemeState] = useState<Theme>(getTheme);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  // The drawer (the sidebar on a phone) closes on Escape.
+  useEffect(() => {
+    if (!isDrawerOpen) {
+      return;
+    }
+    const onKeyDown = (event: KeyboardEvent) => event.key === "Escape" && setIsDrawerOpen(false);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isDrawerOpen]);
+
   if (!session) {
     return null;
   }
-  const canOpenAdmin = session.role === "hr";
+
+  function toggleTheme() {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    setThemeState(next);
+  }
 
   return (
-    <div className="flex h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-2">
-        <nav className="flex items-center gap-1" aria-label="Main">
-          <span className="mr-3 font-semibold text-slate-900">HR Assistant</span>
-          {!session.mustChangePassword && (
-            <NavLink to="/chat" className={linkClassName}>
-              Chat
-            </NavLink>
-          )}
-          {!session.mustChangePassword && (
-            <NavLink to="/leave" className={linkClassName}>
-              Leave
-            </NavLink>
-          )}
-          {!session.mustChangePassword && (
-            <NavLink to="/approvals" className={linkClassName}>
-              Approvals
-            </NavLink>
-          )}
-          {!session.mustChangePassword && session.attendanceAccess !== "none" && (
-            <NavLink to="/attendance" end className={linkClassName}>
-              Attendance
-            </NavLink>
-          )}
-          {!session.mustChangePassword && (session.attendanceAccess === "hr" || session.attendanceAccess === "pm") && (
-            <NavLink to="/attendance/team" className={linkClassName}>
-              Team attendance
-            </NavLink>
-          )}
-          {canOpenAdmin && !session.mustChangePassword && (
-            <NavLink to="/admin" className={linkClassName}>
-              HR admin
-            </NavLink>
-          )}
-          {!session.mustChangePassword && (
-            <NavLink to="/me" className={linkClassName}>
-              My profile
-            </NavLink>
-          )}
-          <NavLink to="/change-password" className={linkClassName}>
-            Change password
-          </NavLink>
-        </nav>
-        <div className="flex items-center gap-3 text-sm">
-          <NotificationBell />
-          <span className="text-slate-600">
-            {session.fullName} ({session.employeeId})
-          </span>
-          <button
-            type="button"
-            onClick={() => signOut()}
-            className="rounded-md border border-slate-300 px-3 py-1 text-slate-700 hover:bg-slate-100"
-          >
-            Log out
-          </button>
+    <ToastProvider>
+      <div className="flex h-dvh overflow-hidden bg-canvas">
+        <aside className="hidden shrink-0 lg:block">
+          <Sidebar session={session} onSignOut={() => signOut()} />
+        </aside>
+
+        {isDrawerOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/50" onClick={() => setIsDrawerOpen(false)} />
+            <div className="drawer-in absolute inset-y-0 left-0">
+              <Sidebar session={session} onNavigate={() => setIsDrawerOpen(false)} onSignOut={() => signOut()} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-surface px-4">
+            <button
+              type="button"
+              onClick={() => setIsDrawerOpen((wasOpen) => !wasOpen)}
+              aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
+              className="rounded-lg p-2 text-ink-2 hover:bg-surface-2 lg:hidden"
+            >
+              {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
+            <span className="hidden text-sm text-ink-3 lg:block">Semicolon Marketing</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                className="rounded-lg p-2 text-ink-2 hover:bg-surface-2"
+              >
+                {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+              </button>
+              {session.role !== "superadmin" && <NotificationBell />}
+            </div>
+          </header>
+          <main className="min-h-0 flex-1 overflow-y-auto">
+            <Outlet />
+          </main>
         </div>
-      </header>
-      <main className="min-h-0 flex-1">
-        <Outlet />
-      </main>
-    </div>
+      </div>
+    </ToastProvider>
   );
 }

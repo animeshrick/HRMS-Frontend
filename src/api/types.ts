@@ -1,7 +1,7 @@
 // The shapes of the requests and replies of the FastAPI backend (app/main.py).
 // Later these can be generated from http://127.0.0.1:8000/openapi.json with the openapi-typescript tool.
 
-export type Role = "employee" | "hr" | "ceo" | "pm";
+export type Role = "employee" | "hr" | "ceo" | "pm" | "superadmin";
 
 export interface LoginRequest {
   emp_id: string;
@@ -148,7 +148,7 @@ export interface Approval {
 }
 
 // ---- attendance. Times are UTC text; show them with formatClock (India time).
-export type AttendanceAccess = "hr" | "pm" | "employee" | "none";
+export type AttendanceAccess = "superadmin" | "hr" | "pm" | "employee" | "none";
 
 export interface AttendanceToday {
   work_date: string;
@@ -237,4 +237,38 @@ export interface AttendanceCorrectionRequest {
   check_in_time?: string;
   check_out_time?: string;
   reason: string;
+}
+
+// ---- super admin
+export interface SuperadminEmployee {
+  emp_id: string;
+  full_name: string;
+  dept: string | null;
+  role: Role;
+  has_attendance: boolean;
+}
+
+export interface SuperadminLeaveType {
+  code: string;
+  name: string;
+}
+
+export interface SuperadminLeaveRequest {
+  emp_id: string;
+  leave_type: string;
+  start_date: string;
+  end_date?: string;
+  day_type: "full" | "half";
+  reason?: string;
+}
+
+export interface SuperadminAttendanceRequest {
+  emp_id: string;
+  work_date: string;
+  check_in_time?: string;
+  check_out_time?: string;
+}
+
+export interface SuperadminResult {
+  message: string;
 }
