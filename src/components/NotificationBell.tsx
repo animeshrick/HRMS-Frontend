@@ -112,7 +112,7 @@ export function NotificationBell() {
         onClick={openPanel}
         aria-label={badgeLabel}
         aria-expanded={isOpen}
-        className="relative rounded-md p-1.5 text-ink-2 hover:bg-surface-2"
+        className="relative rounded-lg p-2 text-ink-2 transition hover:bg-surface-2 hover:text-ink"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5" aria-hidden="true">
           <path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
@@ -127,7 +127,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-line bg-surface p-2 shadow-lg">
+        <div className="absolute right-0 z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-surface p-2 shadow-pop">
           {(leavesQuery.isError || correctionsQuery.isError) && (
             <p role="alert" className="px-2 py-2 text-sm text-bad">
               Could not load your notifications. {describeError(leavesQuery.error ?? correctionsQuery.error)}

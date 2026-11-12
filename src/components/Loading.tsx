@@ -1,5 +1,6 @@
 // One loading look for the whole app, always centred in whatever space it is given.
 import { useEffect, useState } from "react";
+import { LoaderMark } from "./LoaderMark";
 
 interface LoadingProps {
   /** Shown under the spinner. Keep it short: "Loading your profile". */
@@ -28,10 +29,7 @@ export function Loading({ label = "Loading", fill = "page", delayMilliseconds = 
   return (
     <div className={wrapperClassName} role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand"
-        />
+        <LoaderMark />
         <span className="text-sm text-ink-3">{label}</span>
       </div>
     </div>

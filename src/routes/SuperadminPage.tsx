@@ -163,7 +163,7 @@ export function SuperadminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6">
+    <div className="page">
       <PageHeader title="Super admin" subtitle="Apply leave and set attendance for anyone, on any past date. Weekends and company holidays cannot be used." />
       {employeesQuery.isPending && <Loading fill="inline" label="Loading employees" delayMilliseconds={300} />}
       {employeesQuery.isError && <ErrorMessage message={`Could not load the employees. ${describeError(employeesQuery.error)}`} />}
@@ -192,14 +192,14 @@ export function SuperadminPage() {
                 </span>
               </span>
               <span className="flex gap-2">
-                <button type="button" onClick={() => chooseForLeave(person.emp_id)} className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-2 hover:bg-surface-2">
+                <button type="button" onClick={() => chooseForLeave(person.emp_id)} className="btn btn-sm btn-quiet">
                   Apply leave
                 </button>
                 <button
                   type="button"
                   disabled={!person.has_attendance}
                   onClick={() => chooseForAttendance(person.emp_id)}
-                  className="rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-ink-2 hover:bg-surface-2 disabled:opacity-40"
+                  className="btn btn-sm btn-quiet"
                 >
                   Set attendance
                 </button>

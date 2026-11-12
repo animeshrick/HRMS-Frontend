@@ -48,7 +48,7 @@ function WorkdayRibbon({ officeStart, lateAfter, officeEnd }: { officeStart: str
       <div className="relative h-2 overflow-hidden rounded-full bg-surface-2">
         <div className={`${segment} bg-ok-soft`} style={{ left: `${startPercent}%`, width: `${latePercent - startPercent}%` }} />
         <div className={`${segment} bg-warn-soft`} style={{ left: `${latePercent}%`, width: `${endPercent - latePercent}%` }} />
-        <div className={`${segment} bg-brand-soft`} style={{ left: `${endPercent}%`, right: 0 }} />
+        <div className={`${segment} bg-holiday-soft`} style={{ left: `${endPercent}%`, right: 0 }} />
       </div>
       {isInsideBar && (
         <span className="relative -mt-4 block h-4">

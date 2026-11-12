@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useLocation } from "react-router";
 import { useAuth, type Session } from "../app/AuthContext";
 import { getTheme, setTheme, type Theme } from "../lib/theme";
 import {
@@ -18,6 +18,7 @@ import {
   TeamIcon,
   UserIcon,
 } from "./icons";
+import { Logo } from "./Logo";
 import { NotificationBell } from "./NotificationBell";
 import { ToastProvider } from "./Toast";
 
@@ -73,10 +74,11 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
   return (
     <div className="flex h-full w-64 flex-col bg-side text-side-ink">
       <div className="flex items-center gap-3 px-5 py-5">
-        <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-ink">
-          H
+        <Logo size={40} />
+        <span className="leading-tight">
+          <span className="block text-base font-semibold text-white">HR Assistant</span>
+          <span className="block text-xs text-side-ink/70">Semicolon</span>
         </span>
-        <span className="text-base font-semibold text-white">HR Assistant</span>
       </div>
       <nav aria-label="Main" className="min-h-0 flex-1 space-y-5 overflow-y-auto px-3 py-2">
         {groups.map((group) => (
@@ -90,8 +92,10 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
                     end={item.end}
                     onClick={onNavigate}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                        isActive ? "bg-side-active text-white" : "text-side-ink hover:bg-side-active/60"
+                      `group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-150 ${
+                        isActive
+                          ? "bg-side-active text-white before:absolute before:inset-y-2 before:left-0 before:w-1 before:rounded-full before:bg-brand [&>svg]:text-brand"
+                          : "text-side-ink hover:bg-side-active/60 hover:text-white"
                       }`
                     }
                   >
@@ -106,7 +110,7 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
       </nav>
       <div className="border-t border-side-line p-3">
         <div className="flex items-center gap-3 px-2 py-2">
-          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-side-active text-sm font-semibold text-white">
+          <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-sm font-semibold text-brand-ink">
             {initialsOf(session.fullName)}
           </span>
           <div className="min-w-0 text-sm">
@@ -119,7 +123,7 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
         <button
           type="button"
           onClick={onSignOut}
-          className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-side-ink transition hover:bg-side-active/60"
+          className="mt-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-side-ink transition duration-150 hover:bg-side-active/60 hover:text-white"
         >
           <LogoutIcon />
           Log out
@@ -133,6 +137,7 @@ export function Layout() {
   const { session, signOut } = useAuth();
   const [theme, setThemeState] = useState<Theme>(getTheme);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const location = useLocation();
 
   // The drawer (the sidebar on a phone) closes on Escape.
   useEffect(() => {
@@ -147,6 +152,12 @@ export function Layout() {
   if (!session) {
     return null;
   }
+
+  // The name of the open page, shown in the top bar.
+  const currentPage = buildNavigation(session)
+    .flatMap((group) => group.items)
+    .filter((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`))
+    .sort((first, second) => second.to.length - first.to.length)[0];
 
   function toggleTheme() {
     const next: Theme = theme === "dark" ? "light" : "dark";
@@ -171,7 +182,7 @@ export function Layout() {
         )}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-14 shrink-0 items-center justify-between border-b border-line bg-surface px-4">
+          <header className="flex h-16 shrink-0 items-center justify-between gap-3 border-b border-line bg-surface px-4 sm:px-6">
             <button
               type="button"
               onClick={() => setIsDrawerOpen((wasOpen) => !wasOpen)}
@@ -180,13 +191,17 @@ export function Layout() {
             >
               {isDrawerOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
-            <span className="hidden text-sm text-ink-3 lg:block">Semicolon Marketing</span>
+            <p aria-hidden="true" className="min-w-0 flex-1 truncate text-sm font-medium text-ink-2">
+              <span className="text-ink-3">Semicolon Marketing</span>
+              {currentPage && <span className="text-ink-3"> / </span>}
+              {currentPage && <span className="text-ink">{currentPage.label}</span>}
+            </p>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={toggleTheme}
                 aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                className="rounded-lg p-2 text-ink-2 hover:bg-surface-2"
+                className="rounded-lg p-2 text-ink-2 transition hover:bg-surface-2 hover:text-ink"
               >
                 {theme === "dark" ? <SunIcon /> : <MoonIcon />}
               </button>

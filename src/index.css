@@ -3,61 +3,70 @@
 /* Dark mode is the "dark" class on <html>. Components use the semantic colours below, so they need no dark: variants. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* The colours come from the company logo: the yellow tile, the charcoal semicolon and the red signal arcs. */
 :root {
-  --canvas: #f4f6f6;
+  --canvas: #f5f5f3;
   --surface: #ffffff;
-  --surface-2: #eef2f2;
-  --line: #dce3e3;
-  --ink: #14262b;
-  --ink-2: #44575c;
-  --ink-3: #6b7f84;
-  --brand: #0e7c86;
-  --brand-ink: #ffffff;
-  --brand-soft: #ddf1f2;
-  --side: #0f2a30;
-  --side-ink: #cfe3e5;
-  --side-line: #1d4048;
-  --side-active: #17424a;
-  --accent: #e3a12f;
-  --ok: #1f7a4d;
-  --ok-soft: #ddf3e6;
-  --warn: #8f5d00;
-  --warn-soft: #fbebc8;
-  --bad: #b23a32;
-  --bad-soft: #fbe1de;
+  --surface-2: #efefec;
+  --line: #e1e1dc;
+  --ink: #1f1f22;
+  --ink-2: #4a4a50;
+  --ink-3: #696970;
+  --brand: #f8d058;          /* logo yellow: filled buttons, the active marker, the user's chat bubble */
+  --brand-ink: #26262a;      /* text on the yellow */
+  --brand-soft: #fdf1c4;
+  --brand-text: #7a5900;     /* yellow that is dark enough to read as text on white */
+  --focus: #38383c;          /* logo charcoal: focus rings and strong outlines */
+  --side: #2a2a2d;
+  --side-ink: #d4d4d8;
+  --side-line: #3c3c41;
+  --side-active: #3a3a3f;
+  --accent: #c8322e;         /* logo red: the "now" marker and small signals */
+  --ok: #1c7447;
+  --ok-soft: #dcf2e5;
+  --warn: #8a4b06;
+  --warn-soft: #fde9cf;
+  --bad: #b92d28;
+  --bad-soft: #fbe2e0;
   --leave: #5b4bc4;
-  --leave-soft: #e7e3fa;
+  --leave-soft: #e8e4fb;
   --holiday: #1b6e9e;
   --holiday-soft: #dceefa;
+  --shadow-card: 0 1px 2px rgb(20 20 22 / 0.05), 0 6px 20px rgb(20 20 22 / 0.04);
+  --shadow-pop: 0 10px 30px rgb(20 20 22 / 0.14);
   color-scheme: light;
 }
 
 .dark {
-  --canvas: #0c1417;
-  --surface: #142126;
-  --surface-2: #1b2b31;
-  --line: #263a41;
-  --ink: #e6f0f1;
-  --ink-2: #afc2c6;
-  --ink-3: #849a9f;
-  --brand: #3cb5bf;
-  --brand-ink: #062a2e;
-  --brand-soft: #123940;
-  --side: #091014;
-  --side-ink: #b9cfd2;
-  --side-line: #1a2b31;
-  --side-active: #153037;
-  --accent: #e8b04e;
-  --ok: #5fcf97;
-  --ok-soft: #153a2a;
-  --warn: #efc067;
-  --warn-soft: #3a2f12;
-  --bad: #f08a82;
-  --bad-soft: #3c1a18;
-  --leave: #a79bf0;
-  --leave-soft: #28224d;
+  --canvas: #161618;
+  --surface: #212124;
+  --surface-2: #2b2b2f;
+  --line: #37373c;
+  --ink: #f3f3f1;
+  --ink-2: #c3c3c8;
+  --ink-3: #9c9ca3;
+  --brand: #f8d058;
+  --brand-ink: #1f1f22;
+  --brand-soft: #3d3516;
+  --brand-text: #f8d058;
+  --focus: #f8d058;
+  --side: #0f0f11;
+  --side-ink: #c9c9ce;
+  --side-line: #26262a;
+  --side-active: #232327;
+  --accent: #ef6a5e;
+  --ok: #62d09a;
+  --ok-soft: #173a2b;
+  --warn: #f2b56b;
+  --warn-soft: #3d2a12;
+  --bad: #f48b84;
+  --bad-soft: #401c1a;
+  --leave: #a99df2;
+  --leave-soft: #2a2450;
   --holiday: #7cc4ee;
   --holiday-soft: #14344a;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-pop: 0 12px 32px rgb(0 0 0 / 0.5);
   color-scheme: dark;
 }
 
@@ -73,6 +82,8 @@
   --color-brand: var(--brand);
   --color-brand-ink: var(--brand-ink);
   --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-focus: var(--focus);
   --color-side: var(--side);
   --color-side-ink: var(--side-ink);
   --color-side-line: var(--side-line);
@@ -88,6 +99,8 @@
   --color-leave-soft: var(--leave-soft);
   --color-holiday: var(--holiday);
   --color-holiday-soft: var(--holiday-soft);
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
 }
 
 body {
@@ -99,9 +112,28 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+
+/* The design system: every page is built from these few pieces, so radius, spacing, shadow and motion are decided once. */
+@layer components {
+  .page { @apply mx-auto w-full max-w-4xl space-y-6 px-4 py-6 sm:px-6 sm:py-8; animation: page-in 220ms ease-out; }
+  .page-wide { @apply max-w-6xl; }
+  .page-narrow { @apply max-w-2xl; }
+  .card { @apply rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6; }
+  .page-title { @apply text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]; }
+  .section-title { @apply text-base font-semibold text-ink; }
+  .btn { @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition duration-150 active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50; }
+  .btn-sm { @apply rounded-lg px-3 py-1.5 text-[0.8125rem]; }
+  .btn-primary { @apply bg-brand text-brand-ink hover:brightness-95; }
+  .btn-quiet { @apply border border-line bg-surface text-ink-2 hover:border-ink-3 hover:text-ink; }
+  .btn-ok { @apply bg-ok text-white hover:brightness-110 dark:text-black; }
+  .btn-bad { @apply bg-bad text-white hover:brightness-110 dark:text-black; }
+  .field { @apply rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink transition duration-150 placeholder:text-ink-3 hover:border-ink-3 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/15; }
+  .notice { @apply rounded-xl border px-3 py-2 text-sm; }
+}
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Small motion that answers an action: a toast arriving, a drawer opening. */
 @keyframes toast-in {
@@ -115,7 +147,30 @@ body {
 .toast-in { animation: toast-in 160ms ease-out; }
 .drawer-in { animation: drawer-in 180ms ease-out; }
 
+/* The loader: the arc goes round, the dot orbits the other way. */
+@keyframes loader-turn { to { transform: rotate(360deg); } }
+.loader-arc { transform-origin: 20px 20px; animation: loader-turn 0.9s linear infinite; }
+.loader-dot { transform-origin: 20px 20px; animation: loader-turn 2.4s linear infinite reverse; }
+
+/* The opening screen (components/Splash.tsx). Every piece is drawn in a 200 x 200 box, so its centre is 100 100. */
+@keyframes splash-spin { to { transform: rotate(360deg); } }
+@keyframes splash-draw { from { stroke-dashoffset: 100; } to { stroke-dashoffset: 0; } }
+@keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes splash-pop { from { opacity: 0; transform: scale(0.2); } 70% { transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
+@keyframes splash-grow { 0% { transform: scaleY(0.08); } 55% { transform: scaleY(1.08); } 100% { transform: scaleY(1); } }
+@keyframes splash-ripple { from { opacity: 0.9; transform: scale(0.1); } to { opacity: 0; transform: scale(1.15); } }
+@keyframes splash-beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+.splash-spin { transform-origin: 100px 100px; animation: splash-spin 3s linear infinite; }
+.splash-draw { animation: splash-draw 1100ms ease-out both; }
+.splash-fade { animation: splash-fade 500ms ease-out both; }
+.splash-pop { transform-box: fill-box; transform-origin: center; animation: splash-pop 520ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.splash-grow { transform-box: fill-box; transform-origin: bottom; animation: splash-grow 700ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both; }
+.splash-ripple { transform-box: fill-box; transform-origin: center; animation: splash-ripple 1800ms ease-out infinite both; }
+.splash-beat { transform-box: fill-box; transform-origin: center; animation: splash-beat 900ms ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
+  .page, .loader-dot, .splash-spin, .splash-draw, .splash-fade, .splash-pop, .splash-grow, .splash-ripple, .splash-beat { animation: none; }
+  .loader-arc { animation-duration: 2.4s; }
   .toast-in, .drawer-in { animation: none; }
   * { scroll-behavior: auto !important; }
 }

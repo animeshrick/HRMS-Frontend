@@ -34,7 +34,7 @@ export function ProfilePage() {
   }
   if (profileQuery.isError) {
     return (
-      <div className="mx-auto max-w-2xl p-6">
+      <div className="page page-narrow">
         <ErrorMessage message={describeError(profileQuery.error)} />
       </div>
     );
@@ -57,8 +57,8 @@ export function ProfilePage() {
   ];
 
   return (
-    <div className="mx-auto max-w-2xl overflow-y-auto p-6">
-      <h1 className="text-lg font-semibold">{profile.full_name}</h1>
+    <div className="page page-narrow">
+      <h1 className="page-title">{profile.full_name}</h1>
       <p className="text-sm text-ink-2">Your profile. To change any detail, please ask HR.</p>
       <dl className="mt-4 divide-y divide-line rounded-lg border border-line bg-surface">
         {details.map(([label, value]) => (

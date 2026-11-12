@@ -6,6 +6,7 @@ import { useAuth } from "../app/AuthContext";
 import { MAXIMUM_QUESTION_LENGTH } from "../lib/config";
 import { LinkedText } from "../components/LinkedText";
 import { Loading } from "../components/Loading";
+import { LoaderMark } from "../components/LoaderMark";
 import { ApiError, describeError } from "../lib/errors";
 import { formatFullTime, formatShortTime } from "../lib/time";
 import { validateDocument, validateQuestion } from "../lib/validation";
@@ -154,7 +155,7 @@ export function ChatPage() {
       <div className="flex-1 space-y-4 no-scrollbar overflow-y-auto py-4" aria-live="polite">
         {messages.length === 0 && (
           <div className="mt-10 text-center">
-            <h1 className="text-lg font-semibold">Ask about company HR policies</h1>
+            <h1 className="page-title">Ask about company HR policies</h1>
             <p className="mt-1 text-sm text-ink-2">Try one of these:</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {STARTER_QUESTIONS.map((starterQuestion) => (
@@ -163,7 +164,7 @@ export function ChatPage() {
                   type="button"
                   disabled={isWaiting}
                   onClick={() => void sendQuestion(starterQuestion, true)}
-                  className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm hover:bg-surface-2 disabled:opacity-60"
+                  className="btn btn-sm btn-quiet rounded-full"
                 >
                   {starterQuestion}
                 </button>
@@ -198,12 +199,12 @@ export function ChatPage() {
 
         {isWaiting && (
           <div className="flex items-center gap-3 text-sm text-ink-3">
-            <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand" />
+            <LoaderMark size={18} />
             <span>Thinking...</span>
             <button
               type="button"
               onClick={() => abortControllerReference.current?.abort()}
-              className="rounded-md border border-line px-2 py-0.5 hover:bg-surface-2"
+              className="btn btn-sm btn-quiet"
             >
               Cancel
             </button>
@@ -226,12 +227,12 @@ export function ChatPage() {
             onKeyDown={handleKeyDown}
             rows={2}
             placeholder="Type your question and press Enter"
-            className="block flex-1 resize-none rounded-md border border-line bg-surface px-3 py-2 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
+            className="field block flex-1 resize-none"
           />
           <button
             type="submit"
             disabled={isWaiting}
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
+            className="btn btn-primary"
           >
             Send
           </button>
@@ -254,7 +255,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   if (message.author === "user") {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[80%] whitespace-pre-wrap rounded-lg bg-brand px-3 py-2 text-sm text-brand-ink">{message.text}</p>
+        <p className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-sm text-brand-ink">{message.text}</p>
       </div>
     );
   }
@@ -262,7 +263,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   if (message.author === "error") {
     return (
       <div className="flex justify-start">
-        <div role="alert" className="max-w-[80%] rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 text-sm text-bad">
+        <div role="alert" className="max-w-[80%] rounded-2xl rounded-bl-md border border-bad/30 bg-bad-soft px-4 py-2.5 text-sm text-bad">
           <p>{message.text}</p>
           {message.failedQuestion && (
             <button
@@ -284,7 +285,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   return (
     <div className="flex justify-start">
       <div
-        className={`max-w-[80%] rounded-lg border px-3 py-2 text-sm ${
+        className={`max-w-[80%] rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm shadow-card ${
           isUnanswerable ? "border-line bg-surface-2 text-ink-2" : "border-line bg-surface text-ink"
         }`}
       >
@@ -345,7 +346,7 @@ function PendingActionBar({ token, action, onAnswer }: PendingActionBarProps) {
         type="button"
         disabled={uploadState.kind === "busy"}
         onClick={() => onAnswer("Yes")}
-        className="rounded-md bg-ok px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+        className="btn btn-sm btn-ok"
       >
         Yes, confirm
       </button>
@@ -353,7 +354,7 @@ function PendingActionBar({ token, action, onAnswer }: PendingActionBarProps) {
         type="button"
         disabled={uploadState.kind === "busy"}
         onClick={() => onAnswer("No")}
-        className="rounded-md border border-line bg-surface px-3 py-1 hover:bg-surface-2 disabled:opacity-60"
+        className="btn btn-sm btn-quiet"
       >
         No, cancel
       </button>

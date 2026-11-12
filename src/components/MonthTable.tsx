@@ -21,7 +21,7 @@ const CELL_COLOUR: Record<string, string> = {
   half_day: "bg-warn-soft text-warn",
   absent: "bg-bad-soft text-bad",
   incomplete: "bg-bad-soft text-bad",
-  on_leave: "bg-brand-soft text-brand",
+  on_leave: "bg-leave-soft text-leave",
   holiday: "bg-holiday-soft text-holiday",
   weekend: "bg-surface-2 text-ink-3",
   checked_in: "bg-ok-soft text-ok",
@@ -35,7 +35,7 @@ const STATUS_COLOUR: Record<string, string> = {
   half_day: "text-warn",
   absent: "text-bad",
   incomplete: "text-bad",
-  on_leave: "text-brand",
+  on_leave: "text-leave",
   checked_in: "text-ok",
 };
 
@@ -54,7 +54,7 @@ export function DayMarks({ day }: { day: Pick<AttendanceDay, "is_late" | "is_ear
 
 function DayDetails({ day }: { day: AttendanceDay }) {
   return (
-    <div className="rounded-md border border-line bg-canvas p-3 text-sm" data-testid="day-details">
+    <div className="rounded-xl border border-line bg-canvas p-3 text-sm" data-testid="day-details">
       <p className="font-medium">
         {day.date} {day.weekday}: <span className={STATUS_COLOUR[day.status] ?? "text-ink-2"}>{statusText(day.status)}</span>
         <DayMarks day={day} />
@@ -108,7 +108,7 @@ export function MonthTable({ month }: { month: AttendanceMonth }) {
             onMouseLeave={() => setHoveredDate(null)}
             onFocus={() => setHoveredDate(day.date)}
             onBlur={() => setHoveredDate(null)}
-            className={`flex h-12 flex-col items-center justify-center rounded-md text-sm ${CELL_COLOUR[day.status] ?? "bg-surface"} ${
+            className={`flex h-12 flex-col items-center justify-center rounded-lg text-sm transition hover:brightness-95 ${CELL_COLOUR[day.status] ?? "bg-surface"} ${
               selectedDate === day.date ? "ring-2 ring-brand" : ""
             }`}
           >

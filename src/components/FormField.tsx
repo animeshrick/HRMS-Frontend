@@ -7,8 +7,7 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   prefix?: string; // fixed text shown inside the box before what the person types, for example "EMP-"
 }
 
-const INPUT_CLASS =
-  "mt-1 block w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand aria-[invalid=true]:border-bad";
+const INPUT_CLASS = "field mt-1 block w-full aria-[invalid=true]:border-bad";
 
 /** An eye (password hidden, click to show) or a crossed eye (password shown, click to hide). */
 function EyeIcon({ isCrossed }: { isCrossed: boolean }) {

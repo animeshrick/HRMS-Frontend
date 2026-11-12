@@ -38,9 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={toast.id}
             role="status"
-            className={`toast-in pointer-events-auto flex max-w-md items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium ${
-              toast.kind === "success" ? "border-ok/30 bg-ok-soft text-ok" : "border-bad/30 bg-bad-soft text-bad"
-            }`}
+            className="toast-in pointer-events-auto flex max-w-md items-center gap-2.5 rounded-xl border border-line bg-surface px-4 py-3 text-sm font-medium text-ink shadow-pop"
           >
             <span aria-hidden="true" className={`h-2 w-2 rounded-full ${toast.kind === "success" ? "bg-ok" : "bg-bad"}`} />
             {toast.text}

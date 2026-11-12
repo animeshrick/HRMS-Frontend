@@ -114,8 +114,8 @@ export function LeavePage() {
   }
 
   return (
-    <div className="mx-auto h-full max-w-3xl space-y-6 overflow-y-auto px-4 py-6">
-      <h1 className="text-xl font-semibold">My leave</h1>
+    <div className="page">
+      <h1 className="page-title">My leave</h1>
 
       <section aria-label="Leave balance" className="grid gap-3 sm:grid-cols-3">
         {balancesQuery.isError && <ErrorMessage message={describeError(balancesQuery.error)} />}
@@ -125,7 +125,7 @@ export function LeavePage() {
           </div>
         )}
         {balances.map((balance) => (
-          <div key={balance.type_code} className="rounded-lg bg-surface p-4 ">
+          <div key={balance.type_code} className="card">
             <p className="text-sm font-medium text-ink-2">{balance.type_name}</p>
             {balance.limit_type === "per_year" ? (
               <>
@@ -141,8 +141,8 @@ export function LeavePage() {
         ))}
       </section>
 
-      <form onSubmit={handleSubmit} noValidate className="space-y-3 rounded-lg bg-surface p-5 ">
-        <h2 className="font-medium">Apply for leave</h2>
+      <form onSubmit={handleSubmit} noValidate className="card space-y-3">
+        <h2 className="section-title">Apply for leave</h2>
         <div>
           <label htmlFor="leave-type" className="block text-sm font-medium text-ink-2">
             Leave type
@@ -151,7 +151,7 @@ export function LeavePage() {
             id="leave-type"
             value={leaveType}
             onChange={(event) => setLeaveType(event.target.value)}
-            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 text-sm"
+            className="field mt-1 block w-full"
           >
             <option value="">Choose...</option>
             {balances.map((balance) => (
@@ -195,21 +195,21 @@ export function LeavePage() {
         </div>
         <ErrorMessage message={formError ?? (applyMutation.isError ? describeError(applyMutation.error) : null)} />
         {successMessage && (
-          <p role="status" className="rounded-md border border-ok/30 bg-ok-soft px-3 py-2 text-sm text-ok">
+          <p role="status" className="notice border-ok/30 bg-ok-soft text-ok">
             {successMessage}
           </p>
         )}
         <button
           type="submit"
           disabled={applyMutation.isPending}
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {applyMutation.isPending ? "Sending..." : "Submit"}
         </button>
       </form>
 
-      <section aria-label="My leave requests" className="rounded-lg bg-surface p-5 ">
-        <h2 className="mb-2 font-medium">My requests</h2>
+      <section aria-label="My leave requests" className="card">
+        <h2 className="section-title mb-2">My requests</h2>
         {leavesQuery.isError && <ErrorMessage message={describeError(leavesQuery.error)} />}
         {cancelMutation.isError && <ErrorMessage message={describeError(cancelMutation.error)} />}
         {leavesQuery.isPending && <SkeletonRows rows={3} />}

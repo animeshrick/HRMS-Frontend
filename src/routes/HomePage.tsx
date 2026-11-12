@@ -38,7 +38,7 @@ function buildWishes(firstName: string, today: string, mine: { kind: string; yea
 
 function Stat({ label, value, to, hint }: { label: string; value: ReactNode; to: string; hint?: string }) {
   return (
-    <Link to={to} className="block rounded-xl border border-line bg-surface p-4 transition hover:border-brand">
+    <Link to={to} className="block rounded-xl border border-line bg-surface p-4 transition hover:border-ink-3">
       <p className="text-sm text-ink-2">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-ink">{value}</p>
       {hint && <p className="mt-1 text-xs text-ink-3">{hint}</p>}
@@ -78,7 +78,7 @@ export function HomePage() {
   const wishes = buildWishes(firstName, companyToday(now), mine);
 
   return (
-    <div className="mx-auto h-full max-w-5xl space-y-6 overflow-y-auto px-4 py-6">
+    <div className="page page-wide">
       <PageHeader title={`${greetingFor(hourNow)}, ${firstName}`} subtitle={clockFormat.format(now)} />
 
       {wishes.length > 0 && (
@@ -128,7 +128,7 @@ export function HomePage() {
       <Card label="Quick links">
         <CardTitle>Ask the assistant</CardTitle>
         <p className="text-sm text-ink-2">Ask about policies, apply for leave or check a balance in plain words.</p>
-        <Link to="/chat" className="mt-3 inline-block rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90">
+        <Link to="/chat" className="btn btn-primary mt-3">
           Open chat
         </Link>
       </Card>

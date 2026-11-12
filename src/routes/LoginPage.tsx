@@ -5,6 +5,7 @@ import { login } from "../api/auth";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { FormField } from "../components/FormField";
+import { Logo } from "../components/Logo";
 import { describeError } from "../lib/errors";
 import { validateEmployeeId, validateRequired } from "../lib/validation";
 
@@ -47,7 +48,7 @@ export function LoginPage() {
     <div className="flex min-h-screen bg-canvas">
       <aside className="hidden w-1/2 flex-col justify-between bg-side p-10 text-side-ink lg:flex">
         <div className="flex items-center gap-3">
-          <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand text-lg font-bold text-brand-ink">H</span>
+          <Logo size={44} />
           <span className="text-base font-semibold text-white">HR Assistant</span>
         </div>
         <div>
@@ -57,11 +58,14 @@ export function LoginPage() {
         <p className="text-xs text-side-ink/60">Semicolon Marketing</p>
       </aside>
       <div className="flex flex-1 items-center justify-center px-4">
-      <form onSubmit={handleSubmit} noValidate className="w-full max-w-sm space-y-4 rounded-xl border border-line bg-surface p-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Log in</h1>
+      <form onSubmit={handleSubmit} noValidate className="card w-full max-w-sm space-y-4">
+        <div className="lg:hidden">
+          <Logo size={44} />
+        </div>
+        <h1 className="page-title">Log in</h1>
         <p className="text-sm text-ink-2">Use the employee ID and password given to you by HR.</p>
         {loginNotice && (
-          <p role="status" className="rounded-md border border-warn/30 bg-warn-soft px-3 py-2 text-sm text-warn">
+          <p role="status" className="notice border-warn/30 bg-warn-soft text-warn">
             {loginNotice}
           </p>
         )}
@@ -87,7 +91,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="w-full rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
+          className="btn btn-primary w-full"
         >
           {loginMutation.isPending ? "Logging in..." : "Log in"}
         </button>

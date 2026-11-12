@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { App } from "./app/App";
 import { AuthProvider } from "./app/AuthContext";
 import { ErrorBoundary } from "./app/ErrorBoundary";
+import { Splash } from "./components/Splash";
 import "./index.css";
 
 // Failed calls are not retried automatically: a wrong password or a 429 must not be repeated behind the user's back.
@@ -18,7 +19,9 @@ createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
-            <App />
+            <Splash>
+              <App />
+            </Splash>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

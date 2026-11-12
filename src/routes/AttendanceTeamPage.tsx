@@ -49,11 +49,11 @@ export function AttendanceTeamPage() {
 
   const summary = teamQuery.data?.summary;
   return (
-    <div className="mx-auto max-w-4xl space-y-6 overflow-y-auto px-4 py-6">
-      <h1 className="text-xl font-semibold">Team attendance</h1>
+    <div className="page page-wide">
+      <h1 className="page-title">Team attendance</h1>
 
-      <section className="rounded-lg bg-surface p-4 " aria-label="Correction requests">
-        <h2 className="mb-2 font-medium">Waiting correction requests</h2>
+      <section className="card" aria-label="Correction requests">
+        <h2 className="section-title mb-2">Waiting correction requests</h2>
         {inboxQuery.isError && <ErrorMessage message={describeError(inboxQuery.error)} />}
         {decisionMutation.isError && <ErrorMessage message={describeError(decisionMutation.error)} />}
         {inboxQuery.isPending && <Loading fill="inline" label="Loading requests" delayMilliseconds={300} />}
@@ -81,7 +81,7 @@ export function AttendanceTeamPage() {
                   type="button"
                   disabled={decisionMutation.isPending}
                   onClick={() => decisionMutation.mutate({ id: correction.id, decision: "approved" })}
-                  className="rounded-md bg-ok px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+                  className="btn btn-sm btn-ok"
                 >
                   Approve
                 </button>
@@ -92,7 +92,7 @@ export function AttendanceTeamPage() {
                     setRejectingId(correction.id);
                     setRejectNote("");
                   }}
-                  className="rounded-md bg-bad px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+                  className="btn btn-sm btn-bad"
                 >
                   Reject
                 </button>
@@ -107,17 +107,17 @@ export function AttendanceTeamPage() {
                     value={rejectNote}
                     maxLength={300}
                     onChange={(event) => setRejectNote(event.target.value)}
-                    className="min-w-0 flex-1 rounded-md border border-line px-2 py-1"
+                    className="field min-w-0 flex-1"
                   />
                   <button
                     type="button"
                     disabled={decisionMutation.isPending || rejectNote.trim() === ""}
                     onClick={() => decisionMutation.mutate({ id: correction.id, decision: "rejected", note: rejectNote.trim() })}
-                    className="rounded-md bg-bad px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+                    className="btn btn-sm btn-bad"
                   >
                     {decisionMutation.isPending ? "Rejecting..." : "Confirm rejection"}
                   </button>
-                  <button type="button" onClick={() => setRejectingId(null)} className="rounded-md border border-line px-3 py-1 hover:bg-surface-2">
+                  <button type="button" onClick={() => setRejectingId(null)} className="btn btn-sm btn-quiet">
                     Cancel
                   </button>
                 </div>
@@ -127,15 +127,15 @@ export function AttendanceTeamPage() {
         </ul>
       </section>
 
-      <section className="rounded-lg bg-surface p-4 " aria-label="Day">
+      <section className="card" aria-label="Day">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-medium">Day</h2>
+          <h2 className="section-title">Day</h2>
           <input
             type="date"
             aria-label="Day"
             value={shownDay}
             onChange={(event) => setDay(event.target.value || null)}
-            className="rounded-md border border-line px-2 py-1 text-sm"
+            className="field"
           />
         </div>
         {teamQuery.isError && <ErrorMessage message={describeError(teamQuery.error)} />}
@@ -159,7 +159,7 @@ export function AttendanceTeamPage() {
             {teamQuery.data?.people.map((person) => (
               <tr key={person.emp_id} className="border-t border-line">
                 <td className="py-1 pr-3">
-                  <button type="button" className="text-brand hover:underline" onClick={() => setOpenPerson(openPerson === person.emp_id ? null : person.emp_id)}>
+                  <button type="button" className="text-brand-text hover:underline" onClick={() => setOpenPerson(openPerson === person.emp_id ? null : person.emp_id)}>
                     {person.full_name}
                   </button>
                   <span className="ml-1 text-xs text-ink-3">{person.emp_id}</span>
@@ -179,12 +179,12 @@ export function AttendanceTeamPage() {
       </section>
 
       {openPerson && (
-        <section className="rounded-lg bg-surface p-4 " aria-label="Person month">
+        <section className="card" aria-label="Person month">
           {personQuery.isPending && personQuery.fetchStatus !== "idle" && <Loading fill="inline" label="Loading the month" delayMilliseconds={300} />}
           {personQuery.isError && <ErrorMessage message={describeError(personQuery.error)} />}
           {personQuery.data && (
             <>
-              <h2 className="mb-2 font-medium">
+              <h2 className="section-title mb-2">
                 {personQuery.data.full_name} ({personQuery.data.emp_id}), {personQuery.data.month}
               </h2>
               <MonthTable month={personQuery.data} />

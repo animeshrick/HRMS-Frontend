@@ -59,15 +59,15 @@ export function AdminPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 overflow-y-auto px-4 py-6">
-      <h1 className="text-xl font-semibold">HR admin</h1>
+    <div className="page page-narrow">
+      <h1 className="page-title">HR admin</h1>
 
       {shownCredentials && (
         <CredentialsCard credentials={shownCredentials} onDismiss={() => setShownCredentials(null)} />
       )}
 
-      <form onSubmit={handleCreate} noValidate className="space-y-3 rounded-lg bg-surface p-5 ">
-        <h2 className="font-medium">Create a login</h2>
+      <form onSubmit={handleCreate} noValidate className="card space-y-3">
+        <h2 className="section-title">Create a login</h2>
         <FormField
           label="Employee ID to create"
           value={createEmployeeId}
@@ -82,7 +82,7 @@ export function AdminPage() {
             id="create-role"
             value={createRole}
             onChange={(event) => setCreateRole(event.target.value as Role)}
-            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 text-sm"
+            className="field mt-1 block w-full"
           >
             <option value="employee">Employee</option>
             <option value="hr">HR</option>
@@ -94,14 +94,14 @@ export function AdminPage() {
         <button
           type="submit"
           disabled={createMutation.isPending}
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {createMutation.isPending ? "Creating..." : "Create login"}
         </button>
       </form>
 
-      <form onSubmit={handleReset} noValidate className="space-y-3 rounded-lg bg-surface p-5 ">
-        <h2 className="font-medium">Reset a password</h2>
+      <form onSubmit={handleReset} noValidate className="card space-y-3">
+        <h2 className="section-title">Reset a password</h2>
         <FormField
           label="Employee ID to reset"
           value={resetEmployeeId}
@@ -112,7 +112,7 @@ export function AdminPage() {
         <button
           type="submit"
           disabled={resetMutation.isPending}
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:opacity-90 disabled:opacity-60"
+          className="btn btn-primary"
         >
           {resetMutation.isPending ? "Resetting..." : "Reset password"}
         </button>
@@ -141,10 +141,10 @@ function CredentialsCard({ credentials, onDismiss }: { credentials: CredentialsR
       <p className="mt-2 text-ink-2">Temporary password (shown only once, share it privately):</p>
       <code className="mt-1 block select-all rounded bg-surface px-2 py-1 font-mono text-base">{credentials.temporary_password}</code>
       <div className="mt-3 flex gap-2">
-        <button type="button" onClick={copyPassword} className="rounded-md border border-line bg-surface px-3 py-1 hover:bg-surface-2">
+        <button type="button" onClick={copyPassword} className="btn btn-sm btn-quiet">
           {wasCopied ? "Copied" : "Copy"}
         </button>
-        <button type="button" onClick={onDismiss} className="rounded-md border border-line bg-surface px-3 py-1 hover:bg-surface-2">
+        <button type="button" onClick={onDismiss} className="btn btn-sm btn-quiet">
           Done, hide it
         </button>
       </div>

@@ -49,8 +49,8 @@ export function ApprovalsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 overflow-y-auto px-4 py-6">
-      <h1 className="text-xl font-semibold">Leave approvals</h1>
+    <div className="page">
+      <h1 className="page-title">Leave approvals</h1>
       <p className="text-sm text-ink-2">
         {session!.role === "hr" || session!.role === "superadmin" ? "All pending requests." : "Pending requests that you can approve or reject."}
       </p>
@@ -58,14 +58,14 @@ export function ApprovalsPage() {
       {decisionMutation.isError && <ErrorMessage message={describeError(decisionMutation.error)} />}
       <ErrorMessage message={documentError} />
       {approvalsQuery.isPending && (
-        <div className="rounded-lg bg-surface p-4 ">
+        <div className="card">
           <SkeletonRows rows={3} />
         </div>
       )}
-      {approvalsQuery.data?.length === 0 && <p className="rounded-lg bg-surface p-4 text-sm text-ink-3 ">Nothing is waiting for you.</p>}
+      {approvalsQuery.data?.length === 0 && <p className="card text-sm text-ink-3">Nothing is waiting for you.</p>}
       <ul className="space-y-3">
         {approvalsQuery.data?.map((approval) => (
-          <li key={approval.id} className="rounded-lg bg-surface p-4 ">
+          <li key={approval.id} className="card">
             <p className="font-medium">
               {approval.full_name} ({approval.emp_id})
             </p>
@@ -82,21 +82,21 @@ export function ApprovalsPage() {
                   onChange={(event) => setRejectReason(event.target.value)}
                   maxLength={500}
                   rows={3}
-                  className="w-full rounded-md border border-line px-3 py-2 text-sm"
+                  className="field w-full"
                 />
                 <div className="flex gap-2 text-sm">
                   <button
                     type="button"
                     disabled={decisionMutation.isPending || rejectReason.trim() === ""}
                     onClick={() => confirmRejection(approval.id)}
-                    className="rounded-md bg-bad px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+                    className="btn btn-sm btn-bad"
                   >
                     {decisionMutation.isPending ? "Rejecting..." : "Confirm rejection"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setRejectingLeaveId(null)}
-                    className="rounded-md border border-line px-3 py-1 hover:bg-surface-2"
+                    className="btn btn-sm btn-quiet"
                   >
                     Cancel
                   </button>
@@ -108,7 +108,7 @@ export function ApprovalsPage() {
                 type="button"
                 disabled={decisionMutation.isPending}
                 onClick={() => decisionMutation.mutate({ leaveId: approval.id, decision: "approved" })}
-                className="rounded-md bg-ok px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+                className="btn btn-sm btn-ok"
               >
                 {decisionMutation.isPending && decisionMutation.variables?.leaveId === approval.id && decisionMutation.variables?.decision === "approved"
                   ? "Approving..."
@@ -121,12 +121,12 @@ export function ApprovalsPage() {
                   setRejectingLeaveId(approval.id);
                   setRejectReason("");
                 }}
-                className="rounded-md bg-bad px-3 py-1 font-medium text-white dark:text-black hover:opacity-90 disabled:opacity-60"
+                className="btn btn-sm btn-bad"
               >
                 Reject
               </button>
               {approval.has_document && (
-                <button type="button" onClick={() => void openDocument(approval.id)} className="rounded-md border border-line px-3 py-1 hover:bg-surface-2">
+                <button type="button" onClick={() => void openDocument(approval.id)} className="btn btn-sm btn-quiet">
                   View document
                 </button>
               )}

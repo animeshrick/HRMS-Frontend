@@ -75,21 +75,21 @@ export function AttendancePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 overflow-y-auto px-4 py-6">
-      <h1 className="text-xl font-semibold">Attendance</h1>
+    <div className="page">
+      <h1 className="page-title">Attendance</h1>
 
       <TodayCard />
 
-      <section className="rounded-lg bg-surface p-4 " aria-label="Month">
+      <section className="card" aria-label="Month">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-medium">Month</h2>
+          <h2 className="section-title">Month</h2>
           <input
             type="month"
             aria-label="Month"
             value={shownMonth ?? ""}
             max={today?.work_date.slice(0, 7)}
             onChange={(event) => setMonth(event.target.value || null)}
-            className="rounded-md border border-line px-2 py-1 text-sm"
+            className="field"
           />
         </div>
         {monthQuery.isError && <ErrorMessage message={describeError(monthQuery.error)} />}
@@ -97,8 +97,8 @@ export function AttendancePage() {
         {monthQuery.data && <MonthTable month={monthQuery.data} />}
       </section>
 
-      <section className="rounded-lg bg-surface p-4 " aria-label="Missed check-in or check-out">
-        <h2 className="mb-1 font-medium">Missed a check-in or check-out?</h2>
+      <section className="card" aria-label="Missed check-in or check-out">
+        <h2 className="section-title mb-1">Missed a check-in or check-out?</h2>
         <p className="mb-3 text-sm text-ink-2">You can ask for a correction for the last 7 working days (weekends are not counted). Times are Indian time (AM or PM).</p>
         <form onSubmit={submitCorrection} className="grid grid-cols-2 gap-3 text-sm">
           <label className="flex flex-col gap-1">
@@ -110,7 +110,7 @@ export function AttendancePage() {
               min={today ? minusWorkingDays(today.work_date, CORRECTION_WORKING_DAYS) : undefined}
               max={today?.work_date}
               onChange={(event) => setCorrectionDate(event.target.value)}
-              className="rounded-md border border-line px-2 py-1"
+              className="field"
             />
           </label>
           <span />
@@ -125,14 +125,14 @@ export function AttendancePage() {
               maxLength={300}
               value={correctionReason}
               onChange={(event) => setCorrectionReason(event.target.value)}
-              className="rounded-md border border-line px-2 py-1"
+              className="field"
             />
           </label>
           <div className="col-span-2">
             <button
               type="submit"
               disabled={correctionMutation.isPending || isWeekOff || (!correctionIn && !correctionOut)}
-              className="rounded-md bg-brand px-4 py-1.5 font-medium text-brand-ink hover:opacity-90 disabled:opacity-50"
+              className="btn btn-primary"
             >
               {correctionMutation.isPending ? "Sending..." : "Send request"}
             </button>
@@ -147,8 +147,8 @@ export function AttendancePage() {
         )}
       </section>
 
-      <section className="rounded-lg bg-surface p-4 " aria-label="My correction requests">
-        <h2 className="mb-2 font-medium">My correction requests</h2>
+      <section className="card" aria-label="My correction requests">
+        <h2 className="section-title mb-2">My correction requests</h2>
         {correctionsQuery.isError && <ErrorMessage message={describeError(correctionsQuery.error)} />}
         {correctionsQuery.isPending && <Loading fill="inline" label="Loading requests" delayMilliseconds={300} />}
         {correctionsQuery.data?.length === 0 && <p className="text-sm text-ink-3">No requests yet.</p>}
