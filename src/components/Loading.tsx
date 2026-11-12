@@ -1,13 +1,27 @@
 // One loading look for the whole app, always centred in whatever space it is given.
+import { useEffect, useState } from "react";
 
 interface LoadingProps {
   /** Shown under the spinner. Keep it short: "Loading your profile". */
   label?: string;
   /** "page" fills the area under the header and centres in it. "inline" centres in its own block. */
   fill?: "page" | "inline";
+  /** Show the spinner only if loading takes longer than this, so a fast answer does not flash it. Default: at once. */
+  delayMilliseconds?: number;
 }
 
-export function Loading({ label = "Loading", fill = "page" }: LoadingProps) {
+export function Loading({ label = "Loading", fill = "page", delayMilliseconds = 0 }: LoadingProps) {
+  const [isVisible, setIsVisible] = useState(delayMilliseconds === 0);
+  useEffect(() => {
+    if (delayMilliseconds === 0) {
+      return;
+    }
+    const timer = setTimeout(() => setIsVisible(true), delayMilliseconds);
+    return () => clearTimeout(timer);
+  }, [delayMilliseconds]);
+  if (!isVisible) {
+    return null;
+  }
   const wrapperClassName =
     fill === "page" ? "flex h-full min-h-[60vh] w-full items-center justify-center p-6" : "flex w-full items-center justify-center p-6";
 

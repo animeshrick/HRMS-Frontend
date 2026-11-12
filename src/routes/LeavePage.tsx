@@ -4,7 +4,7 @@ import { applyLeave, cancelLeave, getBalances, getMyLeaves, uploadDocument } fro
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { FormField } from "../components/FormField";
-import { SkeletonRows } from "../components/Loading";
+import { Loading, SkeletonRows } from "../components/Loading";
 import { describeError } from "../lib/errors";
 import { decisionSummary } from "../lib/decisions";
 import { companyToday } from "../lib/time";
@@ -114,6 +114,11 @@ export function LeavePage() {
 
       <section aria-label="Leave balance" className="grid gap-3 sm:grid-cols-3">
         {balancesQuery.isError && <ErrorMessage message={describeError(balancesQuery.error)} />}
+        {balancesQuery.isPending && (
+          <div className="sm:col-span-3">
+            <Loading fill="inline" label="Loading your leave balance" delayMilliseconds={300} />
+          </div>
+        )}
         {balances.map((balance) => (
           <div key={balance.type_code} className="rounded-lg bg-white p-4 shadow">
             <p className="text-sm font-medium text-slate-700">{balance.type_name}</p>
@@ -222,7 +227,7 @@ export function LeavePage() {
                     onClick={() => cancelMutation.mutate(leave.id)}
                     className="text-xs text-red-600 underline disabled:opacity-60"
                   >
-                    Cancel
+                    {cancelMutation.isPending && cancelMutation.variables === leave.id ? "Cancelling..." : "Cancel"}
                   </button>
                 )}
               </span>

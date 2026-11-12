@@ -38,7 +38,8 @@ export function formatFullTime(isoText: string): string {
   return `${fullFormat.format(moment).toUpperCase().replace(" AT ", " at ")} IST`;
 }
 
-/** "10:05 AM" in Indian time. Empty text when there is no time. */
+
+/** "10:05 AM" or "7:30 PM" (12 hour clock) in Indian time. Empty text when there is no time. */
 export function formatClock(isoText: string | null | undefined): string {
   if (!isoText) {
     return "";
@@ -58,4 +59,26 @@ export function formatMinutes(minutes: number | null | undefined): string {
 /** Today's date in Indian time, as "YYYY-MM-DD". The backend decides the same way (leave/service.py get_today). */
 export function companyToday(now: Date = new Date()): string {
   return isoDateFormat.format(now);
+}
+
+/** "2026-11-12" minus some working days (Monday to Friday), as "2026-11-03". Works on the date text only. */
+export function minusWorkingDays(dayText: string, workingDays: number): string {
+  const moment = new Date(`${dayText}T00:00:00Z`);
+  let remaining = workingDays;
+  while (remaining > 0) {
+    moment.setUTCDate(moment.getUTCDate() - 1);
+    const weekday = moment.getUTCDay();
+    if (weekday !== 0 && weekday !== 6) {
+      remaining -= 1;
+    }
+  }
+  return moment.toISOString().slice(0, 10);
+}
+
+const dayLabelFormat = new Intl.DateTimeFormat("en-IN", { timeZone: "UTC", weekday: "short", day: "2-digit", month: "short" });
+
+/** "2026-11-09" -> "Mon, 09 Nov". Text that is not a date is returned as it is. */
+export function formatDayLabel(dateText: string): string {
+  const moment = new Date(`${dateText}T00:00:00Z`);
+  return Number.isNaN(moment.getTime()) ? dateText : dayLabelFormat.format(moment);
 }

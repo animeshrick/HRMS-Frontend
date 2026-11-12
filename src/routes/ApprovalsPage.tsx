@@ -88,7 +88,7 @@ export function ApprovalsPage() {
                     onClick={() => confirmRejection(approval.id)}
                     className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
                   >
-                    Confirm rejection
+                    {decisionMutation.isPending ? "Rejecting..." : "Confirm rejection"}
                   </button>
                   <button
                     type="button"
@@ -107,7 +107,9 @@ export function ApprovalsPage() {
                 onClick={() => decisionMutation.mutate({ leaveId: approval.id, decision: "approved" })}
                 className="rounded-md bg-green-600 px-3 py-1 font-medium text-white hover:bg-green-500 disabled:opacity-60"
               >
-                Approve
+                {decisionMutation.isPending && decisionMutation.variables?.leaveId === approval.id && decisionMutation.variables?.decision === "approved"
+                  ? "Approving..."
+                  : "Approve"}
               </button>
               <button
                 type="button"

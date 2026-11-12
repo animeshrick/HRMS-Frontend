@@ -3,7 +3,8 @@
 // In development the Vite proxy forwards "/api" to the FastAPI server (see vite.config.ts).
 export const API_BASE_URL: string = String(import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
 
-export const REQUEST_TIMEOUT_MILLISECONDS = 15_000; // normal calls
+// Long enough for a sleeping free Render service to wake up (the first request after a pause takes 30 to 50 seconds).
+export const REQUEST_TIMEOUT_MILLISECONDS = 60_000; // normal calls
 export const CHAT_TIMEOUT_MILLISECONDS = 60_000; // the assistant can take a while to answer
 export const IDLE_LOGOUT_MINUTES = 30; // log out after this much inactivity
 

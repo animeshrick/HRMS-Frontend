@@ -3,16 +3,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { askCorrection, checkIn, checkOut, getMyCorrections, getMyMonth, getToday } from "../api/attendance";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Loading } from "../components/Loading";
 import { DayMarks, MonthTable, statusText } from "../components/MonthTable";
 import { describeError } from "../lib/errors";
-import { formatClock, formatMinutes } from "../lib/time";
+import { TimeField } from "../components/TimeField";
+import { formatClock, formatDayLabel, formatMinutes, minusWorkingDays } from "../lib/time";
 
-/** "2026-11-12" minus some days, as "2026-11-05". Works on the date text only, so the computer's time zone does not matter. */
-function minusDays(dayText: string, days: number): string {
-  const moment = new Date(`${dayText}T00:00:00Z`);
-  moment.setUTCDate(moment.getUTCDate() - days);
-  return moment.toISOString().slice(0, 10);
-}
+const CORRECTION_BADGE: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800",
+  approved: "bg-green-100 text-green-800",
+  rejected: "bg-red-100 text-red-800",
+};
+
+const CORRECTION_WORKING_DAYS = 7; // the backend rule: weekends are not counted
 
 export function AttendancePage() {
   const { session } = useAuth();
@@ -24,6 +27,7 @@ export function AttendancePage() {
   const [correctionIn, setCorrectionIn] = useState("");
   const [correctionOut, setCorrectionOut] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
+  const [formVersion, setFormVersion] = useState(0); // a new number rebuilds the time pickers, so they show empty again after a request is sent
 
   const todayQuery = useQuery({ queryKey: ["attendance-today", employeeId], queryFn: () => getToday(token) });
   const today = todayQuery.data;
@@ -57,9 +61,13 @@ export function AttendancePage() {
       setCorrectionIn("");
       setCorrectionOut("");
       setCorrectionReason("");
+      setFormVersion((version) => version + 1);
     },
     onSettled: refreshAll,
   });
+
+  // Saturday and Sunday are week offs: there is nothing to correct on them (the backend refuses them too).
+  const isWeekOff = correctionDate !== "" && [0, 6].includes(new Date(`${correctionDate}T00:00:00Z`).getUTCDay());
 
   function submitCorrection(event: FormEvent) {
     event.preventDefault();
@@ -72,6 +80,7 @@ export function AttendancePage() {
 
       <section className="rounded-lg bg-white p-4 shadow" aria-label="Today">
         {todayQuery.isError && <ErrorMessage message={describeError(todayQuery.error)} />}
+        {todayQuery.isPending && <Loading fill="inline" label="Loading today" delayMilliseconds={300} />}
         {today && (
           <div className="space-y-2">
             <p className="font-medium">Today, {today.work_date}</p>
@@ -93,7 +102,7 @@ export function AttendancePage() {
                 onClick={() => punchMutation.mutate("in")}
                 className="rounded-md bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
               >
-                Check in
+                {punchMutation.isPending && punchMutation.variables === "in" ? "Checking in..." : "Check in"}
               </button>
               <button
                 type="button"
@@ -101,7 +110,7 @@ export function AttendancePage() {
                 onClick={() => punchMutation.mutate("out")}
                 className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
               >
-                Check out
+                {punchMutation.isPending && punchMutation.variables === "out" ? "Checking out..." : "Check out"}
               </button>
             </div>
             {today.network_check_enabled && <p className="text-xs text-slate-500">Check in and check out work only from the office network.</p>}
@@ -123,12 +132,13 @@ export function AttendancePage() {
           />
         </div>
         {monthQuery.isError && <ErrorMessage message={describeError(monthQuery.error)} />}
+        {monthQuery.isPending && monthQuery.fetchStatus !== "idle" && <Loading fill="inline" label="Loading the month" delayMilliseconds={300} />}
         {monthQuery.data && <MonthTable month={monthQuery.data} />}
       </section>
 
       <section className="rounded-lg bg-white p-4 shadow" aria-label="Missed check-in or check-out">
         <h2 className="mb-1 font-medium">Missed a check-in or check-out?</h2>
-        <p className="mb-3 text-sm text-slate-600">You can ask for a correction for the last 7 days. Times are Indian time.</p>
+        <p className="mb-3 text-sm text-slate-600">You can ask for a correction for the last 7 working days (weekends are not counted). Times are Indian time (AM or PM).</p>
         <form onSubmit={submitCorrection} className="grid grid-cols-2 gap-3 text-sm">
           <label className="flex flex-col gap-1">
             Date
@@ -136,21 +146,15 @@ export function AttendancePage() {
               type="date"
               required
               value={correctionDate}
-              min={today ? minusDays(today.work_date, 7) : undefined}
+              min={today ? minusWorkingDays(today.work_date, CORRECTION_WORKING_DAYS) : undefined}
               max={today?.work_date}
               onChange={(event) => setCorrectionDate(event.target.value)}
               className="rounded-md border border-slate-300 px-2 py-1"
             />
           </label>
           <span />
-          <label className="flex flex-col gap-1">
-            Check-in time (optional)
-            <input type="time" value={correctionIn} onChange={(event) => setCorrectionIn(event.target.value)} className="rounded-md border border-slate-300 px-2 py-1" />
-          </label>
-          <label className="flex flex-col gap-1">
-            Check-out time (optional)
-            <input type="time" value={correctionOut} onChange={(event) => setCorrectionOut(event.target.value)} className="rounded-md border border-slate-300 px-2 py-1" />
-          </label>
+          <TimeField key={`in-${formVersion}`} label="Check-in time (optional)" value={correctionIn} onChange={setCorrectionIn} />
+          <TimeField key={`out-${formVersion}`} label="Check-out time (optional)" value={correctionOut} onChange={setCorrectionOut} />
           <label className="col-span-2 flex flex-col gap-1">
             Reason
             <input
@@ -166,13 +170,14 @@ export function AttendancePage() {
           <div className="col-span-2">
             <button
               type="submit"
-              disabled={correctionMutation.isPending || (!correctionIn && !correctionOut)}
+              disabled={correctionMutation.isPending || isWeekOff || (!correctionIn && !correctionOut)}
               className="rounded-md bg-indigo-600 px-4 py-1.5 font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
             >
-              Send request
+              {correctionMutation.isPending ? "Sending..." : "Send request"}
             </button>
           </div>
         </form>
+        {isWeekOff && <ErrorMessage message="Saturday and Sunday are week offs. Please choose a working day." />}
         {correctionMutation.isError && <ErrorMessage message={describeError(correctionMutation.error)} />}
         {correctionMutation.isSuccess && (
           <p className="mt-2 text-sm text-green-700">
@@ -183,13 +188,19 @@ export function AttendancePage() {
 
       <section className="rounded-lg bg-white p-4 shadow" aria-label="My correction requests">
         <h2 className="mb-2 font-medium">My correction requests</h2>
+        {correctionsQuery.isPending && <Loading fill="inline" label="Loading requests" delayMilliseconds={300} />}
         {correctionsQuery.data?.length === 0 && <p className="text-sm text-slate-500">No requests yet.</p>}
         <ul className="space-y-2 text-sm">
           {correctionsQuery.data?.map((correction) => (
             <li key={correction.id} className="border-t border-slate-100 pt-2">
-              <p>
-                {correction.work_date}: {correction.requested_check_in && `in ${correction.requested_check_in} `}
-                {correction.requested_check_out && `out ${correction.requested_check_out}`} - <strong>{correction.status}</strong>
+              <p className="flex items-center justify-between">
+                <span className="font-medium">{formatDayLabel(correction.work_date)}</span>
+                <span className={`rounded px-2 text-xs capitalize ${CORRECTION_BADGE[correction.status] ?? "bg-slate-100 text-slate-700"}`}>{correction.status}</span>
+              </p>
+              <p className="text-slate-700">
+                {correction.requested_check_in && `Check-in ${formatClock(correction.requested_check_in)}`}
+                {correction.requested_check_in && correction.requested_check_out && " | "}
+                {correction.requested_check_out && `Check-out ${formatClock(correction.requested_check_out)}`}
               </p>
               <p className="text-slate-500">Reason: {correction.reason}</p>
               {correction.decision_note && <p className="text-slate-500">Remark: {correction.decision_note}</p>}

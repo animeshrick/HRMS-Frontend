@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AttendanceCorrection } from "../api/types";
 import { decideCorrection, getCorrectionInbox, getPersonMonth, getTeamDay } from "../api/attendance";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { Loading } from "../components/Loading";
 import { DayMarks, MonthTable, statusText } from "../components/MonthTable";
 import { describeError } from "../lib/errors";
-import { formatClock, formatMinutes } from "../lib/time";
+import { formatClock, formatDayLabel, formatMinutes } from "../lib/time";
 
 export function AttendanceTeamPage() {
   const { session } = useAuth();
@@ -14,6 +16,8 @@ export function AttendanceTeamPage() {
   const queryClient = useQueryClient();
   const [day, setDay] = useState<string | null>(null); // null = today
   const [openPerson, setOpenPerson] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<number | null>(null); // the request whose rejection comment is being written
+  const [rejectNote, setRejectNote] = useState("");
 
   const teamQuery = useQuery({ queryKey: ["attendance-team", employeeId, day], queryFn: () => getTeamDay(token, day) });
   const shownDay = teamQuery.data?.date ?? day ?? "";
@@ -25,7 +29,13 @@ export function AttendanceTeamPage() {
   });
 
   const decisionMutation = useMutation({
-    mutationFn: (input: { id: number; decision: "approved" | "rejected" }) => decideCorrection(token, input.id, input.decision),
+    mutationFn: (input: { id: number; decision: "approved" | "rejected"; note?: string }) => decideCorrection(token, input.id, input.decision, input.note),
+    onSuccess: (_decided, input) => {
+      // Take the decided request off the list at once, without waiting for the list to load again.
+      queryClient.setQueryData<AttendanceCorrection[]>(["attendance-inbox", employeeId], (waiting) => waiting?.filter((correction) => correction.id !== input.id));
+      setRejectingId(null);
+      setRejectNote("");
+    },
     // Refresh even after an error: someone else may have decided it first.
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["attendance-inbox", employeeId] });
@@ -43,20 +53,27 @@ export function AttendanceTeamPage() {
         <h2 className="mb-2 font-medium">Waiting correction requests</h2>
         {inboxQuery.isError && <ErrorMessage message={describeError(inboxQuery.error)} />}
         {decisionMutation.isError && <ErrorMessage message={describeError(decisionMutation.error)} />}
+        {inboxQuery.isPending && <Loading fill="inline" label="Loading requests" delayMilliseconds={300} />}
         {inboxQuery.data?.length === 0 && <p className="text-sm text-slate-500">Nothing is waiting for you.</p>}
-        <ul className="space-y-3 text-sm">
+        <ul className="divide-y divide-slate-100 text-sm">
           {inboxQuery.data?.map((correction) => (
-            <li key={correction.id} className="border-t border-slate-100 pt-2">
-              <p className="font-medium">
-                {correction.full_name} ({correction.emp_id}) - {correction.work_date}
-              </p>
-              <p>
-                Now: in {formatClock(correction.current_check_in_at) || "none"}, out {formatClock(correction.current_check_out_at) || "none"}. Asks:
-                {correction.requested_check_in && ` in ${correction.requested_check_in}`}
-                {correction.requested_check_out && ` out ${correction.requested_check_out}`}
-              </p>
-              <p className="text-slate-500">Reason: {correction.reason}</p>
-              <div className="mt-2 flex gap-2">
+            <li key={correction.id} className="py-2">
+              <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-medium">
+                  {correction.full_name} ({correction.emp_id}) | {formatDayLabel(correction.work_date)}
+                </p>
+                <p className="text-slate-700">
+                  Now: In {formatClock(correction.current_check_in_at) || "-"}, Out {formatClock(correction.current_check_out_at) || "-"} | Asks:
+                  {correction.requested_check_in ? ` In ${formatClock(correction.requested_check_in)}` : ""}
+                  {correction.requested_check_in && correction.requested_check_out ? "," : ""}
+                  {correction.requested_check_out ? ` Out ${formatClock(correction.requested_check_out)}` : ""}
+                </p>
+                <p className="truncate text-slate-500" title={correction.reason}>
+                  Reason: {correction.reason}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
                   disabled={decisionMutation.isPending}
@@ -68,12 +85,40 @@ export function AttendanceTeamPage() {
                 <button
                   type="button"
                   disabled={decisionMutation.isPending}
-                  onClick={() => decisionMutation.mutate({ id: correction.id, decision: "rejected" })}
+                  onClick={() => {
+                    setRejectingId(correction.id);
+                    setRejectNote("");
+                  }}
                   className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
                 >
                   Reject
                 </button>
               </div>
+              </div>
+              {rejectingId === correction.id && (
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="text"
+                    aria-label="Reason for rejecting"
+                    placeholder="Why are you rejecting this? The employee will see it."
+                    value={rejectNote}
+                    maxLength={300}
+                    onChange={(event) => setRejectNote(event.target.value)}
+                    className="min-w-0 flex-1 rounded-md border border-slate-300 px-2 py-1"
+                  />
+                  <button
+                    type="button"
+                    disabled={decisionMutation.isPending || rejectNote.trim() === ""}
+                    onClick={() => decisionMutation.mutate({ id: correction.id, decision: "rejected", note: rejectNote.trim() })}
+                    className="rounded-md bg-red-600 px-3 py-1 font-medium text-white hover:bg-red-500 disabled:opacity-60"
+                  >
+                    {decisionMutation.isPending ? "Rejecting..." : "Confirm rejection"}
+                  </button>
+                  <button type="button" onClick={() => setRejectingId(null)} className="rounded-md border border-slate-300 px-3 py-1 hover:bg-slate-100">
+                    Cancel
+                  </button>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -91,6 +136,7 @@ export function AttendanceTeamPage() {
           />
         </div>
         {teamQuery.isError && <ErrorMessage message={describeError(teamQuery.error)} />}
+        {teamQuery.isPending && <Loading fill="inline" label="Loading the team" delayMilliseconds={300} />}
         {summary && (
           <p className="mb-2 text-sm text-slate-700">
             Present {summary.present}, half day {summary.half_day}, absent {summary.absent}, on leave {summary.on_leave}, late {summary.late_days}.
@@ -131,6 +177,7 @@ export function AttendanceTeamPage() {
 
       {openPerson && (
         <section className="rounded-lg bg-white p-4 shadow" aria-label="Person month">
+          {personQuery.isPending && personQuery.fetchStatus !== "idle" && <Loading fill="inline" label="Loading the month" delayMilliseconds={300} />}
           {personQuery.isError && <ErrorMessage message={describeError(personQuery.error)} />}
           {personQuery.data && (
             <>

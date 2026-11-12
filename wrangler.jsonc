@@ -3,6 +3,8 @@
   "name": "hrms-frontend",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
+  // Where /api/* is forwarded. Change it here if the backend moves.
+  "vars": { "BACKEND_ORIGIN": "https://internal-docs-rag.onrender.com" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

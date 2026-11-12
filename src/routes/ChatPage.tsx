@@ -5,6 +5,7 @@ import type { ChatHistoryMessage, ChatResponse, PendingAction } from "../api/typ
 import { useAuth } from "../app/AuthContext";
 import { MAXIMUM_QUESTION_LENGTH } from "../lib/config";
 import { LinkedText } from "../components/LinkedText";
+import { Loading } from "../components/Loading";
 import { ApiError, describeError } from "../lib/errors";
 import { formatFullTime, formatShortTime } from "../lib/time";
 import { validateDocument, validateQuestion } from "../lib/validation";
@@ -44,6 +45,7 @@ export function ChatPage() {
   const [draftQuestion, setDraftQuestion] = useState("");
   const [validationMessage, setValidationMessage] = useState<string | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true); // the saved messages are still coming
   const abortControllerReference = useRef<AbortController | null>(null);
   const nextMessageIdReference = useRef(1);
   const bottomReference = useRef<HTMLDivElement | null>(null);
@@ -63,6 +65,7 @@ export function ChatPage() {
       return;
     }
     const abortController = new AbortController();
+    setIsLoadingHistory(true);
     loadChatHistory(session.accessToken, abortController.signal)
       .then((savedMessages) => {
         setMessages((previousMessages) => [
@@ -70,7 +73,8 @@ export function ChatPage() {
           ...previousMessages,
         ]);
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => setIsLoadingHistory(false));
     return () => abortController.abort();
   }, [session]);
 
@@ -168,6 +172,8 @@ export function ChatPage() {
           </div>
         )}
 
+        {isLoadingHistory && <Loading fill="inline" label="Loading your chat" delayMilliseconds={300} />}
+
         {messages.map((message, messageIndex) => (
           <div key={message.id} className="space-y-2">
             <MessageBubble message={message} isBusy={isWaiting} onRetry={(question) => void sendQuestion(question, false)} />
@@ -192,6 +198,7 @@ export function ChatPage() {
 
         {isWaiting && (
           <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span aria-hidden="true" className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
             <span>Thinking...</span>
             <button
               type="button"
