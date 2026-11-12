@@ -6,7 +6,7 @@ import { renderWithProviders, storeSession } from "../test/renderWithProviders";
 
 // Requests the layout makes by itself on every page (the notification bell). They are answered
 // separately so they never consume a reply the test queued for its own calls.
-const BACKGROUND_PATHS = ["/leave/mine"];
+const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine"];
 
 function isBackground(url: unknown) {
   return BACKGROUND_PATHS.some((path) => String(url).replace(/^\/api/, "").startsWith(path));

@@ -4,7 +4,7 @@
 // browser only. That is enough for a red dot: the worst case is that the dot comes
 // back on another device, never that a decision is missed.
 
-import type { LeaveRequestRow } from "../api/types";
+import type { AttendanceCorrection, LeaveRequestRow } from "../api/types";
 
 const STORAGE_KEY = "seen-leave-decisions";
 
@@ -25,13 +25,29 @@ export function decisionSummary(leave: LeaveRequestRow): string {
   return note ? `${verb}${by}: ${note}` : `${verb}${by}`;
 }
 
-function storageKeyFor(employeeId: number | string): string {
-  return `${STORAGE_KEY}:${employeeId}`;
+/** "leave" decisions and "correction" (attendance) decisions have their own ids, so each keeps its own list. */
+export type NotificationKind = "leave" | "correction";
+
+function storageKeyFor(employeeId: number | string, kind: NotificationKind): string {
+  return kind === "leave" ? `${STORAGE_KEY}:${employeeId}` : `seen-correction-decisions:${employeeId}`;
 }
 
-export function readSeenIds(employeeId: number | string): number[] {
+export type DecidedCorrection = AttendanceCorrection & { status: "approved" | "rejected" };
+
+export function isCorrectionDecided(correction: AttendanceCorrection): correction is DecidedCorrection {
+  return correction.status === "approved" || correction.status === "rejected";
+}
+
+/** "Approved" or "Rejected: reason" (the remark "Auto" means HR's own request was approved automatically). */
+export function correctionSummary(correction: DecidedCorrection): string {
+  const verb = correction.status === "approved" ? "Approved" : "Rejected";
+  const note = correction.decision_note?.trim();
+  return note ? `${verb}: ${note}` : verb;
+}
+
+export function readSeenIds(employeeId: number | string, kind: NotificationKind = "leave"): number[] {
   try {
-    const raw = window.localStorage.getItem(storageKeyFor(employeeId));
+    const raw = window.localStorage.getItem(storageKeyFor(employeeId, kind));
     const parsed: unknown = raw ? JSON.parse(raw) : [];
     return Array.isArray(parsed) ? parsed.filter((value): value is number => typeof value === "number") : [];
   } catch {
@@ -39,9 +55,9 @@ export function readSeenIds(employeeId: number | string): number[] {
   }
 }
 
-export function writeSeenIds(employeeId: number | string, ids: number[]): void {
+export function writeSeenIds(employeeId: number | string, ids: number[], kind: NotificationKind = "leave"): void {
   try {
-    window.localStorage.setItem(storageKeyFor(employeeId), JSON.stringify(ids));
+    window.localStorage.setItem(storageKeyFor(employeeId, kind), JSON.stringify(ids));
   } catch {
     // Storing is a convenience; the app works without it.
   }
