@@ -21,3 +21,15 @@ export function RequireHr() {
   const { session } = useAuth();
   return session?.role === "hr" ? <Outlet /> : <Navigate to="/chat" replace />;
 }
+
+/** Everyone except the CEO and the CTO has an attendance section. */
+export function RequireAttendance() {
+  const { session } = useAuth();
+  return session && session.attendanceAccess !== "none" ? <Outlet /> : <Navigate to="/chat" replace />;
+}
+
+/** HR and the PM see the team attendance page. */
+export function RequireAttendanceManager() {
+  const { session } = useAuth();
+  return session?.attendanceAccess === "hr" || session?.attendanceAccess === "pm" ? <Outlet /> : <Navigate to="/attendance" replace />;
+}

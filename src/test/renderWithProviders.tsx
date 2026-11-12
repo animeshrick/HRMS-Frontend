@@ -25,6 +25,7 @@ export function storeSession(overrides: Partial<Record<string, unknown>> = {}) {
       fullName: "Test User",
       employeeId: "EMP003",
       mustChangePassword: false,
+      attendanceAccess: "employee",
       ...overrides,
     }),
   );

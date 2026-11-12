@@ -2,7 +2,7 @@
 // so a refresh keeps you logged in but closing the tab logs you out.
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { setUnauthorizedHandler } from "../api/client";
-import type { LoginResponse, Role } from "../api/types";
+import type { AttendanceAccess, LoginResponse, Role } from "../api/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { IDLE_LOGOUT_MINUTES } from "../lib/config";
 
@@ -12,6 +12,7 @@ export interface Session {
   fullName: string;
   employeeId: string;
   mustChangePassword: boolean;
+  attendanceAccess: AttendanceAccess; // hr and pm also get the team page; none = no attendance (CEO, CTO)
 }
 
 interface AuthContextValue {
@@ -60,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: loginResponse.full_name,
       employeeId: loginResponse.emp_id,
       mustChangePassword: loginResponse.must_change_password,
+      attendanceAccess: loginResponse.attendance_access ?? "none",
     };
     writeStoredSession(newSession);
     setLoginNotice(null);

@@ -15,6 +15,7 @@ export interface LoginResponse {
   role: Role;
   full_name: string;
   emp_id: string;
+  attendance_access: AttendanceAccess;
 }
 
 export interface ChangePasswordRequest {
@@ -144,4 +145,96 @@ export interface Approval {
   reason: string | null;
   has_document: boolean;
   requested_at: string;
+}
+
+// ---- attendance. Times are UTC text; show them with formatClock (India time).
+export type AttendanceAccess = "hr" | "pm" | "employee" | "none";
+
+export interface AttendanceToday {
+  work_date: string;
+  day_note: string | null;
+  checked_in_at: string | null;
+  checked_out_at: string | null;
+  status: string;
+  is_late: boolean;
+  is_early_leave: boolean;
+  worked_minutes: number | null;
+  can_check_in: boolean;
+  can_check_out: boolean;
+  office_start: string;
+  office_end: string;
+  late_after: string;
+  network_check_enabled: boolean;
+}
+
+export interface AttendanceDay {
+  date: string;
+  weekday: string;
+  status: string;
+  check_in_at: string | null;
+  check_out_at: string | null;
+  worked_minutes: number | null;
+  is_late: boolean;
+  is_early_leave: boolean;
+  note: string | null;
+}
+
+export interface AttendanceSummary {
+  present: number;
+  half_day: number;
+  absent: number;
+  incomplete: number;
+  on_leave: number;
+  holiday: number;
+  weekend: number;
+  checked_in: number;
+  not_checked_in: number;
+  late_days: number;
+  early_leave_days: number;
+  worked_minutes: number;
+}
+
+export interface AttendanceMonth {
+  emp_id: string;
+  full_name: string;
+  month: string;
+  days: AttendanceDay[];
+  summary: AttendanceSummary;
+}
+
+export interface AttendancePersonDay extends AttendanceDay {
+  emp_id: string;
+  full_name: string;
+  dept: string | null;
+}
+
+export interface AttendanceTeam {
+  date: string;
+  people: AttendancePersonDay[];
+  summary: AttendanceSummary;
+}
+
+export interface AttendanceCorrection {
+  id: number;
+  employee_id: number;
+  emp_id: string | null;
+  full_name: string | null;
+  dept: string | null;
+  work_date: string;
+  requested_check_in: string | null;
+  requested_check_out: string | null;
+  current_check_in_at: string | null;
+  current_check_out_at: string | null;
+  reason: string;
+  status: string;
+  decided_at: string | null;
+  decision_note: string | null;
+  created_at: string;
+}
+
+export interface AttendanceCorrectionRequest {
+  work_date: string;
+  check_in_time?: string;
+  check_out_time?: string;
+  reason: string;
 }

@@ -32,6 +32,16 @@ export function Layout() {
               Approvals
             </NavLink>
           )}
+          {!session.mustChangePassword && session.attendanceAccess !== "none" && (
+            <NavLink to="/attendance" end className={linkClassName}>
+              Attendance
+            </NavLink>
+          )}
+          {!session.mustChangePassword && (session.attendanceAccess === "hr" || session.attendanceAccess === "pm") && (
+            <NavLink to="/attendance/team" className={linkClassName}>
+              Team attendance
+            </NavLink>
+          )}
           {canOpenAdmin && !session.mustChangePassword && (
             <NavLink to="/admin" className={linkClassName}>
               HR admin
