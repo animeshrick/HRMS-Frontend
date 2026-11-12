@@ -23,30 +23,47 @@ function indianMinutesNow(): number {
   return hours * 60 + Number(parts.find((part) => part.type === "minute")?.value ?? 0);
 }
 
-/** The working day as a bar: green until the late limit, amber after it, and a saffron marker for now. */
+const BAR_START_MINUTES = 8 * 60; // the bar starts at 8:00 AM, for people who come early
+const BAR_END_MINUTES = 23 * 60 + 30; // and ends at 11:30 PM, for overtime
+
+/** 645 -> "10:45 AM". */
+function clockLabel(minutes: number): string {
+  const hours24 = Math.floor(minutes / 60);
+  const period = hours24 >= 12 ? "PM" : "AM";
+  return `${hours24 % 12 === 0 ? 12 : hours24 % 12}:${String(minutes % 60).padStart(2, "0")} ${period}`;
+}
+
+/** The day as a bar from 8:00 AM to 11:30 PM: early, on time (green), late (amber), after office hours (blue, overtime), and a saffron marker for now. */
 function WorkdayRibbon({ officeStart, lateAfter, officeEnd }: { officeStart: string; lateAfter: string; officeEnd: string }) {
-  const start = minutesOf(officeStart);
-  const end = minutesOf(officeEnd);
-  const span = Math.max(end - start, 1);
-  const percentOf = (minutes: number) => Math.min(100, Math.max(0, ((minutes - start) / span) * 100));
+  const span = BAR_END_MINUTES - BAR_START_MINUTES;
+  const percentOf = (minutes: number) => Math.min(100, Math.max(0, ((minutes - BAR_START_MINUTES) / span) * 100));
+  const startPercent = percentOf(minutesOf(officeStart));
   const latePercent = percentOf(minutesOf(lateAfter));
+  const endPercent = percentOf(minutesOf(officeEnd));
   const nowMinutes = indianMinutesNow();
-  const isInsideDay = nowMinutes >= start && nowMinutes <= end;
+  const isInsideBar = nowMinutes >= BAR_START_MINUTES && nowMinutes <= BAR_END_MINUTES;
+  const segment = "absolute inset-y-0";
   return (
     <div className="mt-4" aria-hidden="true">
-      <div className="relative h-2 rounded-full bg-surface-2">
-        <div className="absolute inset-y-0 left-0 rounded-l-full bg-ok-soft" style={{ width: `${latePercent}%` }} />
-        <div className="absolute inset-y-0 rounded-r-full bg-warn-soft" style={{ left: `${latePercent}%`, right: 0 }} />
-        {isInsideDay && (
-          <span className="absolute top-1/2 h-4 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent" style={{ left: `${percentOf(nowMinutes)}%` }} />
-        )}
+      <div className="relative h-2 overflow-hidden rounded-full bg-surface-2">
+        <div className={`${segment} bg-ok-soft`} style={{ left: `${startPercent}%`, width: `${latePercent - startPercent}%` }} />
+        <div className={`${segment} bg-warn-soft`} style={{ left: `${latePercent}%`, width: `${endPercent - latePercent}%` }} />
+        <div className={`${segment} bg-brand-soft`} style={{ left: `${endPercent}%`, right: 0 }} />
       </div>
-      <div className="relative mt-1 h-4 text-xs text-ink-3">
-        {latePercent > 15 && <span className="absolute left-0">{officeStart}</span>}
-        <span className="absolute -translate-x-1/2" style={{ left: `${latePercent}%` }}>
-          {lateAfter}
+      {isInsideBar && (
+        <span className="relative -mt-4 block h-4">
+          <span className="absolute top-0 h-4 w-1 -translate-x-1/2 rounded-full bg-accent" style={{ left: `${percentOf(nowMinutes)}%` }} />
         </span>
-        <span className="absolute right-0">{officeEnd}</span>
+      )}
+      <div className="relative mt-1 h-4 text-xs text-ink-3">
+        <span className="absolute left-0 hidden sm:block">{clockLabel(BAR_START_MINUTES)}</span>
+        <span className="absolute -translate-x-1/2" style={{ left: `${latePercent}%` }}>
+          {clockLabel(minutesOf(lateAfter))}
+        </span>
+        <span className="absolute -translate-x-1/2" style={{ left: `${endPercent}%` }}>
+          {clockLabel(minutesOf(officeEnd))}
+        </span>
+        <span className="absolute right-0">{clockLabel(BAR_END_MINUTES)}</span>
       </div>
     </div>
   );
@@ -84,7 +101,7 @@ export function TodayCard() {
         <div className="space-y-2">
           <p className="text-base font-semibold text-ink">Today, {today.work_date}</p>
           <p className="text-sm text-ink-2">
-            Office hours {today.office_start} to {today.office_end}. Check in after {today.late_after} is marked late.
+            Office hours {clockLabel(minutesOf(today.office_start))} to {clockLabel(minutesOf(today.office_end))}. Check in after {clockLabel(minutesOf(today.late_after))} is marked late.
           </p>
           {today.day_note && <p className="text-sm text-ink-2">{today.day_note}</p>}
           <p className="text-sm text-ink-2" data-testid="today-state">
