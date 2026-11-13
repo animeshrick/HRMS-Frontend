@@ -91,6 +91,26 @@ export interface ResetPasswordRequest {
   emp_id: string;
 }
 
+export interface CreateEmployeeRequest {
+  emp_id: string;
+  full_name: string;
+  email: string;
+  dept?: string | null;
+  phone?: string | null;
+  gender?: string | null;
+  date_of_birth?: string | null;   // "YYYY-MM-DD"
+  date_of_joining?: string | null; // "YYYY-MM-DD"
+  salary?: number | null;
+  is_confidential?: boolean;
+}
+
+export interface EmployeeSummary {
+  emp_id: string;
+  full_name: string;
+  email: string;
+  dept: string | null;
+}
+
 export interface CredentialsResponse {
   emp_id: string;
   full_name: string;
@@ -271,4 +291,36 @@ export interface SuperadminAttendanceRequest {
 
 export interface SuperadminResult {
   message: string;
+}
+
+/** One row of the super admin's audit trail (GET /superadmin/audit-log). */
+export interface SuperadminAuditEntry {
+  id: number;
+  actor_emp_id: string;
+  target_emp_id: string;
+  action: "leave_applied" | "attendance_set";
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+// ---- attendance admin (office network), HR only
+export interface OfficeNetwork {
+  id: number;
+  label: string;
+  cidr: string;
+  is_active: boolean;
+}
+
+export interface AttendanceAdminSettings {
+  network_check_enabled: boolean;
+  office_networks: OfficeNetwork[];
+}
+
+export interface AddOfficeNetworkRequest {
+  label: string;
+  cidr: string;
+}
+
+export interface NetworkCheckRequest {
+  enabled: boolean;
 }

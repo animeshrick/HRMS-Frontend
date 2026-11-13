@@ -1,5 +1,13 @@
 import { apiRequest } from "./client";
-import type { LeaveBalance, SuperadminAttendanceRequest, SuperadminEmployee, SuperadminLeaveRequest, SuperadminLeaveType, SuperadminResult } from "./types";
+import type {
+  LeaveBalance,
+  SuperadminAttendanceRequest,
+  SuperadminAuditEntry,
+  SuperadminEmployee,
+  SuperadminLeaveRequest,
+  SuperadminLeaveType,
+  SuperadminResult,
+} from "./types";
 
 // All of these are for the super admin only. The backend checks the role, hiding the page is just for convenience.
 export const getSuperadminEmployees = (token: string) => apiRequest<SuperadminEmployee[]>("/superadmin/employees", { token });
@@ -14,3 +22,6 @@ export const applyLeaveFor = (token: string, request: SuperadminLeaveRequest) =>
 
 export const markAttendanceFor = (token: string, request: SuperadminAttendanceRequest) =>
   apiRequest<SuperadminResult>("/superadmin/attendance", { method: "POST", body: request, token });
+
+// Who the super admin acted on, what was done, and when. Newest first.
+export const getSuperadminAuditLog = (token: string) => apiRequest<SuperadminAuditEntry[]>("/superadmin/audit-log", { token });

@@ -6,8 +6,9 @@ import { renderWithProviders, storeSession } from "../test/renderWithProviders";
 
 // Requests the layout makes by itself on every page (the notification bell). They are answered
 // separately so they never consume a reply the test queued for its own calls.
-const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations"];
+const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations", "/admin/attendance-settings"];
 const EMPTY_MONTH = { summary: { present: 0, half_day: 0, late_days: 0 }, days: [] };
+const EMPTY_ADMIN_SETTINGS = { network_check_enabled: false, office_networks: [] };
 
 function isBackground(url: unknown) {
   return BACKGROUND_PATHS.some((path) => String(url).replace(/^\/api/, "").startsWith(path));
@@ -22,7 +23,14 @@ function mockFetchSequence(...responses: Array<{ status: number; body: unknown }
   const queued = [...responses];
   const fetchMock = vi.fn(async (url: string) => {
     if (isBackground(url)) {
-      return new Response(JSON.stringify(String(url).includes("/attendance/mine") ? EMPTY_MONTH : String(url).includes("/attendance/today") ? {} : []), { status: 200 });
+      const body = String(url).includes("/attendance/mine")
+        ? EMPTY_MONTH
+        : String(url).includes("/attendance/today")
+          ? {}
+          : String(url).includes("/admin/attendance-settings")
+            ? EMPTY_ADMIN_SETTINGS
+            : [];
+      return new Response(JSON.stringify(body), { status: 200 });
     }
     const next = queued.shift();
     return next
@@ -170,5 +178,29 @@ describe("admin", () => {
     expect(await screen.findByText("20000101EMP010xyz")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /hide it/ }));
     expect(screen.queryByText("20000101EMP010xyz")).not.toBeInTheDocument();
+  });
+
+  it("adds a new employee and carries the ID into the create-login field", async () => {
+    storeSession({ role: "hr" });
+    mockFetchSequence({
+      status: 200,
+      body: { emp_id: "EMP020", full_name: "Nina Rao", email: "nina@onionorg.test", dept: "IT" },
+    });
+    renderWithProviders(<App />, "/admin");
+    await userEvent.type(screen.getByLabelText("Employee ID"), "EMP020");
+    await userEvent.type(screen.getByLabelText("Full name"), "Nina Rao");
+    await userEvent.type(screen.getByLabelText("Email"), "nina@onionorg.test");
+    await userEvent.click(screen.getByRole("button", { name: "Add employee" }));
+    expect(await screen.findByText("Nina Rao (EMP020) added.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Employee ID to create")).toHaveValue("EMP020");
+  });
+
+  it("says what is missing instead of calling the server", async () => {
+    storeSession({ role: "hr" });
+    const fetchMock = mockFetchSequence();
+    renderWithProviders(<App />, "/admin");
+    await userEvent.click(screen.getByRole("button", { name: "Add employee" }));
+    expect(screen.getByText("Enter the employee ID.")).toBeInTheDocument();
+    expect(serverCalls(fetchMock)).toHaveLength(0);
   });
 });

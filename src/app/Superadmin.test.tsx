@@ -19,6 +19,7 @@ const ROUTES = {
     ],
   },
   "GET /superadmin/leave-types": { body: [{ code: "casual", name: "Casual Leave" }] },
+  "GET /superadmin/audit-log": { body: [] },
 };
 
 describe("super admin page", () => {

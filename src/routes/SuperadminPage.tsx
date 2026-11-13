@@ -1,7 +1,14 @@
 import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPersonMonth } from "../api/attendance";
-import { applyLeaveFor, getBalancesFor, getSuperadminEmployees, getSuperadminLeaveTypes, markAttendanceFor } from "../api/superadmin";
+import {
+  applyLeaveFor,
+  getBalancesFor,
+  getSuperadminAuditLog,
+  getSuperadminEmployees,
+  getSuperadminLeaveTypes,
+  markAttendanceFor,
+} from "../api/superadmin";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Loading } from "../components/Loading";
@@ -10,7 +17,7 @@ import { TimeField } from "../components/TimeField";
 import { useToast } from "../components/Toast";
 import { BUTTON_PRIMARY, Card, CardTitle, INPUT, PageHeader } from "../components/ui";
 import { describeError } from "../lib/errors";
-import { companyToday, formatClock, formatMinutes } from "../lib/time";
+import { companyToday, formatClock, formatMinutes, formatShortTime } from "../lib/time";
 
 // Saturday and Sunday are week offs. The backend refuses them (and company holidays) too.
 const isWeekOff = (day: string) => day !== "" && [0, 6].includes(new Date(`${day}T00:00:00Z`).getUTCDay());
@@ -23,6 +30,7 @@ export function SuperadminPage() {
 
   const employeesQuery = useQuery({ queryKey: ["superadmin-employees"], queryFn: () => getSuperadminEmployees(token) });
   const leaveTypesQuery = useQuery({ queryKey: ["superadmin-leave-types"], queryFn: () => getSuperadminLeaveTypes(token) });
+  const auditLogQuery = useQuery({ queryKey: ["superadmin-audit-log"], queryFn: () => getSuperadminAuditLog(token) });
   const employees = employeesQuery.data ?? [];
   const leaveCardReference = useRef<HTMLDivElement>(null);
   const attendanceCardReference = useRef<HTMLDivElement>(null);
@@ -54,6 +62,7 @@ export function SuperadminPage() {
     onSuccess: (result) => {
       toast.success(result.message);
       void queryClient.invalidateQueries({ queryKey: ["superadmin-balances"] });
+      void queryClient.invalidateQueries({ queryKey: ["superadmin-audit-log"] });
       setStartDate("");
       setEndDate("");
       setReason("");
@@ -119,6 +128,7 @@ export function SuperadminPage() {
       markAttendanceFor(token, { emp_id: attendanceEmployee, work_date: attendanceDate, check_in_time: checkIn || undefined, check_out_time: checkOut || undefined }),
     onSuccess: (result) => {
       toast.success(result.message);
+      void queryClient.invalidateQueries({ queryKey: ["superadmin-audit-log"] });
       setCheckIn("");
       setCheckOut("");
       setFormVersion((version) => version + 1);
@@ -326,6 +336,29 @@ export function SuperadminPage() {
         {attendanceProblem ? <ErrorMessage message={attendanceProblem} /> : attendanceBlocked && <ErrorMessage message="Saturday and Sunday are week offs. Please choose a working day." />}
         {dayQuery.isError && <ErrorMessage message={`Could not load the saved attendance of that day. ${describeError(dayQuery.error)}`} />}
         {attendanceMutation.isError && <ErrorMessage message={describeError(attendanceMutation.error)} />}
+      </Card>
+
+      <Card label="Audit log">
+        <CardTitle>Recent super admin actions</CardTitle>
+        <p className="mb-3 text-sm text-ink-2">Every leave or attendance change made here for someone else, newest first.</p>
+        {auditLogQuery.isLoading && <p className="text-sm text-ink-3">Loading...</p>}
+        {auditLogQuery.isError && <ErrorMessage message={describeError(auditLogQuery.error)} />}
+        {auditLogQuery.data && auditLogQuery.data.length === 0 && <p className="text-sm text-ink-3">Nothing yet.</p>}
+        {auditLogQuery.data && auditLogQuery.data.length > 0 && (
+          <ul className="space-y-1.5">
+            {auditLogQuery.data.map((entry) => (
+              <li key={entry.id} className="rounded-lg border border-line px-3 py-2 text-sm">
+                <span className="font-medium text-ink">{entry.target_emp_id}</span>{" "}
+                <span className="text-ink-2">
+                  {entry.action === "leave_applied"
+                    ? `leave applied (${String(entry.details.leave_type ?? "")}, ${String(entry.details.start_date ?? "")}${entry.details.end_date && entry.details.end_date !== entry.details.start_date ? ` to ${String(entry.details.end_date)}` : ""})`
+                    : `attendance set for ${String(entry.details.work_date ?? "")}`}
+                </span>
+                <span className="ml-2 text-ink-3">{formatShortTime(entry.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </div>
   );
