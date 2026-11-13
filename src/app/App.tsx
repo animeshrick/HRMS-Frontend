@@ -3,6 +3,7 @@ import { Layout } from "../components/Layout";
 import { AdminPage } from "../routes/AdminPage";
 import { AttendancePage } from "../routes/AttendancePage";
 import { AttendanceTeamPage } from "../routes/AttendanceTeamPage";
+import { DowntimePage } from "../routes/DowntimePage";
 import { HomePage } from "../routes/HomePage";
 import { SuperadminPage } from "../routes/SuperadminPage";
 import { ApprovalsPage } from "../routes/ApprovalsPage";
@@ -14,7 +15,17 @@ import { NotFoundPage } from "../routes/NotFoundPage";
 import { ProfilePage } from "../routes/ProfilePage";
 import { RequireAttendance, RequireAttendanceManager, RequireHr, RequireLogin, RequireOwnWork, RequireSuperadmin } from "./RouteGuards";
 
+// Planned maintenance switch. Set VITE_DOWNTIME=true in .env (or .env.local) to take the whole
+// app offline for every visitor, logged in or not, without touching any route or guard below.
+const DOWNTIME = String(import.meta.env.VITE_DOWNTIME ?? "")
+  .trim()
+  .toLowerCase() === "true";
+
 export function App() {
+  if (DOWNTIME) {
+    return <DowntimePage />;
+  }
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
