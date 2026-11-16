@@ -429,6 +429,7 @@ export interface MessagePerson {
   full_name: string;
   dept: string | null;
   role: string | null;
+  is_online: boolean;      // best-effort: active within the last couple of minutes (see app/core/presence.py)
 }
 
 export interface Conversation {

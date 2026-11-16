@@ -7,13 +7,13 @@ import { callsTo, mockRoutes, renderWithProviders, storeSession } from "../test/
 afterEach(() => vi.unstubAllGlobals());
 
 const PEOPLE = [
-  { emp_id: "EMP001", full_name: "Hana Reyes", dept: "HR", role: "hr" },
-  { emp_id: "EMP010", full_name: "CEO Carl", dept: "Executive", role: "superadmin" },
+  { emp_id: "EMP001", full_name: "Hana Reyes", dept: "HR", role: "hr", is_online: true },
+  { emp_id: "EMP010", full_name: "CEO Carl", dept: "Executive", role: "superadmin", is_online: false },
 ];
 
 const CONVERSATIONS = [
   {
-    person: { emp_id: "EMP001", full_name: "Hana Reyes", dept: "HR", role: "hr" },
+    person: { emp_id: "EMP001", full_name: "Hana Reyes", dept: "HR", role: "hr", is_online: true },
     last_message: "See you at 3pm",
     last_message_at: "2026-11-16T09:00:00Z",
     unread_count: 2,
@@ -21,7 +21,7 @@ const CONVERSATIONS = [
 ];
 
 const THREAD = {
-  person: { emp_id: "EMP001", full_name: "Hana Reyes", dept: "HR", role: "hr" },
+  person: { emp_id: "EMP001", full_name: "Hana Reyes", dept: "HR", role: "hr", is_online: true },
   messages: [
     { id: 1, mine: false, body: "Hi there", attachment_path: null, attachment_filename: null, attachment_content_type: null, created_at: "2026-11-16T08:00:00Z" },
     { id: 2, mine: true, body: "See you at 3pm", attachment_path: null, attachment_filename: null, attachment_content_type: null, created_at: "2026-11-16T09:00:00Z" },
@@ -36,6 +36,25 @@ describe("messages page", () => {
     const row = (await screen.findByText("Hana Reyes")).closest("button")!;
     expect(within(row).getByText("See you at 3pm")).toBeInTheDocument();
     expect(within(row).getByText("2")).toBeInTheDocument();
+  });
+
+  it("shows a green online dot for a conversation partner who is currently online", async () => {
+    storeSession();
+    mockRoutes({ "GET /messages/conversations": { body: CONVERSATIONS } });
+    renderWithProviders(<App />, "/messages");
+    const row = (await screen.findByText("Hana Reyes")).closest("button")!;
+    expect(within(row).getByTitle("Online")).toBeInTheDocument();
+  });
+
+  it("does not show the online dot for someone who is not online, in the picker", async () => {
+    storeSession();
+    mockRoutes({ "GET /messages/conversations": { body: [] }, "GET /messages/people": { body: PEOPLE } });
+    renderWithProviders(<App />, "/messages");
+    await userEvent.click(screen.getByRole("button", { name: "New message" }));
+    const onlineRow = (await screen.findByText("Hana Reyes")).closest("button")!;
+    expect(within(onlineRow).getByTitle("Online")).toBeInTheDocument();
+    const offlineRow = screen.getByText("CEO Carl").closest("button")!;
+    expect(within(offlineRow).queryByTitle("Online")).not.toBeInTheDocument();
   });
 
   it("shows the empty state when there are no conversations in the last 24 hours", async () => {

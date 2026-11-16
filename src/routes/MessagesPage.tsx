@@ -27,6 +27,24 @@ function initialsOf(fullName: string): string {
   return fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]!.toUpperCase()).join("");
 }
 
+// The avatar circle used everywhere a person shows up in Messages (conversation list, the "new
+// message" picker). A small green dot in the corner means they have used the app in the last
+// couple of minutes (see MessagePerson.is_online / app/core/presence.py) - best-effort, not a
+// guarantee they are looking at the screen right now.
+function PersonAvatar({ fullName, isOnline, size = "h-9 w-9" }: { fullName: string; isOnline: boolean; size?: string }) {
+  return (
+    <span aria-hidden="true" className={`relative flex ${size} shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink-2`}>
+      {fullName ? initialsOf(fullName) : <UserIcon />}
+      {isOnline && (
+        <span
+          title="Online"
+          className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-surface bg-ok"
+        />
+      )}
+    </span>
+  );
+}
+
 export function MessagesPage() {
   const { session } = useAuth();
   const token = session!.accessToken;
@@ -135,9 +153,7 @@ export function MessagesPage() {
                       onClick={() => person.emp_id && openThread(person.emp_id)}
                       className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm hover:bg-surface-2"
                     >
-                      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink-2">
-                        {initialsOf(person.full_name)}
-                      </span>
+                      <PersonAvatar fullName={person.full_name} isOnline={person.is_online} size="h-8 w-8" />
                       <span className="min-w-0">
                         <span className="block truncate font-medium text-ink">{person.full_name}</span>
                         <span className="block truncate text-xs text-ink-3">{person.dept ?? "No department"}</span>
@@ -167,9 +183,7 @@ function ConversationRow({ conversation, isActive, onOpen }: { conversation: Con
         onClick={onOpen}
         className={`flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition ${isActive ? "bg-surface-2" : "hover:bg-surface-2"}`}
       >
-        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-semibold text-ink-2">
-          {conversation.person.full_name ? initialsOf(conversation.person.full_name) : <UserIcon />}
-        </span>
+        <PersonAvatar fullName={conversation.person.full_name} isOnline={conversation.person.is_online} />
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">
             <span className="truncate font-medium text-ink">{conversation.person.full_name}</span>
