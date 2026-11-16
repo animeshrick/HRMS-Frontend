@@ -1,7 +1,10 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useLocation } from "react-router";
+import { getConversations } from "../api/messages";
 import { useAuth, type Session } from "../app/AuthContext";
 import { getTheme, setTheme, type Theme } from "../lib/theme";
+import { AiChatWidget } from "./AiChatWidget";
 import {
   ApprovalIcon,
   ChatIcon,
@@ -41,7 +44,7 @@ function buildNavigation(session: Session): { title: string; items: NavItem[] }[
   const isSuperadmin = session.role === "superadmin"; // an admin account only: no leave and no check-in of its own
   const work: NavItem[] = [
     { to: "/home", label: "Home", icon: <HomeIcon /> },
-    { to: "/chat", label: "Chat", icon: <ChatIcon /> },
+    { to: "/messages", label: "Messages", icon: <ChatIcon /> },
     { to: "/documents", label: "Documents", icon: <FolderIcon /> },
   ];
   if (!isSuperadmin) {
@@ -75,8 +78,20 @@ function initialsOf(fullName: string): string {
   return fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]!.toUpperCase()).join("");
 }
 
+const UNREAD_MESSAGES_REFRESH_MILLISECONDS = 20_000;
+
 function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavigate?: () => void; onSignOut: () => void }) {
   const groups = buildNavigation(session);
+  // Drives the small unread badge on the "Messages" link below. Shares its cache across the
+  // desktop sidebar and the mobile drawer (both render a Sidebar), and with the Messages page itself.
+  const conversationsQuery = useQuery({
+    queryKey: ["conversations"],
+    queryFn: () => getConversations(session.accessToken),
+    refetchInterval: UNREAD_MESSAGES_REFRESH_MILLISECONDS,
+    enabled: !session.mustChangePassword,
+  });
+  const conversations = Array.isArray(conversationsQuery.data) ? conversationsQuery.data : [];
+  const unreadMessageCount = conversations.reduce((total, conversation) => total + conversation.unread_count, 0);
   return (
     <div className="flex h-full w-64 flex-col bg-side text-side-ink">
       <div className="flex items-center gap-3 px-5 py-5">
@@ -107,6 +122,11 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
                   >
                     {item.icon}
                     {item.label}
+                    {item.to === "/messages" && unreadMessageCount > 0 && (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-xs font-semibold text-brand-ink">
+                        {unreadMessageCount}
+                      </span>
+                    )}
                   </NavLink>
                 </li>
               ))}
@@ -219,6 +239,7 @@ export function Layout() {
           </main>
         </div>
       </div>
+      <AiChatWidget />
     </ToastProvider>
   );
 }

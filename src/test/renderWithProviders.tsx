@@ -1,4 +1,5 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 import type { ReactNode } from "react";
@@ -41,6 +42,7 @@ export function mockRoutes(routes: Record<string, RouteReply | ((request: { body
     "GET /leave/mine": { body: [] },
     "GET /attendance/corrections/mine": { body: [] },
     "GET /system/downtime": { body: { down_pages: [] } },
+    "GET /messages/conversations": { body: [] },
     ...routes,
   };
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
@@ -56,6 +58,12 @@ export function mockRoutes(routes: Record<string, RouteReply | ((request: { body
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+}
+
+// The AI assistant now lives in the floating widget (see AiChatWidget.tsx) instead of its own
+// "/chat" route, so a test that needs the chat panel open must click its FAB first.
+export async function openChatWidget() {
+  await userEvent.click(await screen.findByRole("button", { name: "Open chat" }));
 }
 
 export function callsTo(fetchMock: ReturnType<typeof vi.fn>, key: string) {

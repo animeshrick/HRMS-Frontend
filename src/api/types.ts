@@ -422,3 +422,39 @@ export interface SignedDownload {
   url: string;
   valid_for_seconds: number;
 }
+
+// ---- 1-to-1 messages (open: any employee, including HR/CEO/the super admin, may message any other)
+export interface MessagePerson {
+  emp_id: string | null;   // null only for someone who has since left (kept so old history still reads)
+  full_name: string;
+  dept: string | null;
+  role: string | null;
+}
+
+export interface Conversation {
+  person: MessagePerson;
+  last_message: string;
+  last_message_at: string;
+  unread_count: number;
+}
+
+export interface DirectMessage {
+  id: number;
+  mine: boolean;
+  body: string | null;
+  attachment_path: string | null;
+  attachment_filename: string | null;
+  attachment_content_type: string | null;
+  created_at: string;
+}
+
+export interface MessageThread {
+  person: MessagePerson;
+  messages: DirectMessage[];
+}
+
+export interface MessageAttachmentUpload {
+  attachment_path: string;
+  attachment_filename: string;
+  attachment_content_type: string;
+}

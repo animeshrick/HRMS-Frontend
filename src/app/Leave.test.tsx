@@ -2,7 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach } from "vitest";
 import { App } from "./App";
-import { callsTo, mockRoutes, renderWithProviders, storeSession } from "../test/renderWithProviders";
+import { callsTo, mockRoutes, openChatWidget, renderWithProviders, storeSession } from "../test/renderWithProviders";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -28,7 +28,8 @@ describe("chat with a leave waiting for confirmation", () => {
           ? { body: { ...CONFIRM_REPLY, answer: "Done. Your request #12 was sent to Rahul Verma for approval.", pending_action: null } }
           : { body: CONFIRM_REPLY },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "Apply leave for 10th Nov, 2026 for full day{Enter}");
     expect(await screen.findByText(/Please upload related document\(Optional\)\./)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Yes, confirm" }));
@@ -44,7 +45,8 @@ describe("chat with a leave waiting for confirmation", () => {
       "POST /leave/documents?filename=note.pdf": { body: { document_path: "3/abc-note.pdf" } },
       "POST /pending-actions/7/document": { body: { message: "Document added." } },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "apply{Enter}");
     await screen.findByRole("button", { name: "Yes, confirm" });
     await userEvent.upload(screen.getByLabelText(/Related document/), new File(["pdf"], "note.pdf", { type: "application/pdf" }));
@@ -57,7 +59,8 @@ describe("chat with a leave waiting for confirmation", () => {
   it("refuses a wrong file type without calling the server", async () => {
     storeSession();
     const fetchMock = mockRoutes({ "POST /chat": { body: CONFIRM_REPLY } });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "apply{Enter}");
     await screen.findByRole("button", { name: "Yes, confirm" });
     await userEvent.upload(screen.getByLabelText(/Related document/), new File(["x"], "virus.exe", { type: "application/x-msdownload" }), { applyAccept: false });
@@ -346,7 +349,8 @@ describe("payslip link in the chat", () => {
           answer: "Here is your payslip for October 2026: https://signed.example/payslips/3/a.pdf?token=1\nThe link works for 5 minutes." },
       },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "my payslip{Enter}");
     const link = await screen.findByRole("link", { name: /signed\.example/ });
     expect(link).toHaveAttribute("href", "https://signed.example/payslips/3/a.pdf?token=1");
@@ -357,7 +361,8 @@ describe("payslip link in the chat", () => {
   it("does not make non-https text clickable", async () => {
     storeSession();
     mockRoutes({ "POST /chat": { body: { question: "q", rewritten_question: "q", answerable: true, sources: [], pending_action: null, answer: "Visit javascript:alert(1) or http://plain.example" } } });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "hello{Enter}");
     const message = (await screen.findByText(/javascript:alert/)).closest("p")!;
     expect(within(message).queryByRole("link")).not.toBeInTheDocument();       // the menu links are outside this message

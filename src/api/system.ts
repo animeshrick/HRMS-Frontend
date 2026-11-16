@@ -11,7 +11,8 @@ export type DowntimePageKey =
   | "attendance"
   | "me"
   | "admin"
-  | "superadmin";
+  | "superadmin"
+  | "messages";
 
 export interface DowntimeStatus {
   down_pages: DowntimePageKey[];

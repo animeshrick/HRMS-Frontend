@@ -2,11 +2,11 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, vi } from "vitest";
 import { App } from "./App";
-import { renderWithProviders, storeSession } from "../test/renderWithProviders";
+import { openChatWidget, renderWithProviders, storeSession } from "../test/renderWithProviders";
 
 // Requests the layout makes by itself on every page (the notification bell). They are answered
 // separately so they never consume a reply the test queued for its own calls.
-const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations", "/admin/attendance-settings", "/documents/requests/inbox", "/documents/requests/mine", "/system/downtime"];
+const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations", "/admin/attendance-settings", "/documents/requests/inbox", "/documents/requests/mine", "/system/downtime", "/messages/conversations"];
 const EMPTY_MONTH = { summary: { present: 0, half_day: 0, late_days: 0 }, days: [] };
 const EMPTY_ADMIN_SETTINGS = { network_check_enabled: false, office_networks: [] };
 
@@ -47,13 +47,13 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe("route guards", () => {
   it("sends a logged-out visitor to the login page", () => {
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/home");
     expect(screen.getByRole("heading", { name: "Log in" })).toBeInTheDocument();
   });
 
   it("forces a temporary-password user to the change-password page", () => {
     storeSession({ mustChangePassword: true });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/home");
     expect(screen.getByRole("heading", { name: "Change password" })).toBeInTheDocument();
   });
 
@@ -111,7 +111,7 @@ describe("change password", () => {
     await userEvent.type(screen.getByLabelText("Confirm new password"), "short");
     await userEvent.click(screen.getByRole("button", { name: "Change password" }));
     expect(screen.getByText(/at least 10 characters/)).toBeInTheDocument();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(serverCalls(fetchMock)).toHaveLength(0);
   });
 
   it("logs out with a notice after a successful change", async () => {
@@ -126,7 +126,7 @@ describe("change password", () => {
   });
 });
 
-describe("chat", () => {
+describe("chat widget", () => {
   it("shows the answer and its sources", async () => {
     storeSession();
     mockFetchSequence({ status: 200, body: [] }, {   // the first call is the (empty) chat history
@@ -136,7 +136,8 @@ describe("chat", () => {
         sources: [{ number: 1, chunk_id: "c1", doc_id: "HR-LEAVE-001", title: "Leave Policy", section: "2.1", version: "1.2" }],
       },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "How many casual leaves?{Enter}");
     expect(await screen.findByText("You get 8 casual leaves.")).toBeInTheDocument();
     expect(screen.getByText(/Sources \(1\)/)).toBeInTheDocument();
@@ -149,7 +150,8 @@ describe("chat", () => {
       { status: 502, body: { detail: "The assistant could not answer right now. Please try again in a moment." } },
       { status: 200, body: { question: "q", rewritten_question: "q", answer: "Second try worked.", answerable: true, sources: [] } },
     );
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "hello{Enter}");
     expect(await screen.findByRole("alert")).toHaveTextContent("could not answer right now");
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -160,7 +162,8 @@ describe("chat", () => {
   it("logs out when the server says the session is not valid", async () => {
     storeSession();
     mockFetchSequence({ status: 200, body: [] }, { status: 401, body: { detail: "Your session has expired or is not valid. Please log in again." } });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "hello{Enter}");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Log in" })).toBeInTheDocument());
     expect(screen.getByText(/Your session has ended/)).toBeInTheDocument();

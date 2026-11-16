@@ -11,8 +11,8 @@ import { HomePage } from "../routes/HomePage";
 import { SuperadminPage } from "../routes/SuperadminPage";
 import { ApprovalsPage } from "../routes/ApprovalsPage";
 import { ChangePasswordPage } from "../routes/ChangePasswordPage";
-import { ChatPage } from "../routes/ChatPage";
 import { LeavePage } from "../routes/LeavePage";
+import { MessagesPage } from "../routes/MessagesPage";
 import { WfhPage } from "../routes/WfhPage";
 import { LoginPage } from "../routes/LoginPage";
 import { NotFoundPage } from "../routes/NotFoundPage";
@@ -36,8 +36,8 @@ export function App() {
       <Route element={<RequireLogin />}>
         <Route element={<Layout />}>
           <Route path="/home" element={<PageDowntimeGuard pageKey="home"><HomePage /></PageDowntimeGuard>} />
-          <Route path="/chat" element={<PageDowntimeGuard pageKey="chat"><ChatPage /></PageDowntimeGuard>} />
           <Route path="/documents" element={<PageDowntimeGuard pageKey="documents"><DocumentsPage /></PageDowntimeGuard>} />
+          <Route path="/messages" element={<PageDowntimeGuard pageKey="messages"><MessagesPage /></PageDowntimeGuard>} />
           <Route element={<RequireOwnWork />}>
             <Route path="/leave" element={<PageDowntimeGuard pageKey="leave_and_wfh"><LeavePage /></PageDowntimeGuard>} />
             <Route path="/wfh" element={<PageDowntimeGuard pageKey="leave_and_wfh"><WfhPage /></PageDowntimeGuard>} />

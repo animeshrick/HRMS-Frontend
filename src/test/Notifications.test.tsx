@@ -19,7 +19,7 @@ describe("notification bell", () => {
       "GET /attendance/corrections/mine": { body: [...CORRECTIONS, { ...CORRECTIONS[0], id: 5, work_date: "2026-11-05", status: "approved", decision_note: "Auto" }] },
       "GET /attendance/today": { body: {} },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
     const bell = await screen.findByRole("button", { name: "1 new decision" }); // the Auto one does not count
     await userEvent.click(bell);
     expect(screen.getByText("Attendance corrections")).toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("notification bell", () => {
         body: [{ id: 2, document: { id: 10, original_filename: "my-notes.docx" }, status: "approved", requested_at: "2026-11-01T00:00:00Z", decided_at: "2026-11-02T00:00:00Z", expires_at: "2099-01-01T00:00:00Z", is_active: true }],
       },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
     const bell = await screen.findByRole("button", { name: "2 new decisions" });
     await userEvent.click(bell);
     expect(screen.getByText("Document requests waiting for you")).toBeInTheDocument();

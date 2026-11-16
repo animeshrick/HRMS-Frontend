@@ -1,12 +1,15 @@
+// The AI assistant's chat UI, shown inside the floating widget (see AiChatWidget.tsx). This used
+// to be the full-page ChatPage - moved here so the assistant is reachable from every page instead
+// of needing its own route, freeing the "Chat" nav slot for 1-1 messaging between employees.
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { askQuestion, loadChatHistory } from "../api/chat";
 import { attachDocument, uploadDocument } from "../api/leave";
 import type { ChatHistoryMessage, ChatResponse, PendingAction } from "../api/types";
 import { useAuth } from "../app/AuthContext";
 import { MAXIMUM_QUESTION_LENGTH } from "../lib/config";
-import { LinkedText } from "../components/LinkedText";
-import { Loading } from "../components/Loading";
-import { LoaderMark } from "../components/LoaderMark";
+import { LinkedText } from "./LinkedText";
+import { Loading } from "./Loading";
+import { LoaderMark } from "./LoaderMark";
 import { ApiError, describeError } from "../lib/errors";
 import { formatFullTime, formatShortTime } from "../lib/time";
 import { validateDocument, validateQuestion } from "../lib/validation";
@@ -40,7 +43,7 @@ const STARTER_QUESTIONS = [
   "What is the work from home policy?",
 ];
 
-export function ChatPage() {
+export function ChatPanel() {
   const { session } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draftQuestion, setDraftQuestion] = useState("");
@@ -59,8 +62,9 @@ export function ChatPage() {
     shouldScrollToBottomReference.current = true;
   }, [messages, isWaiting]);
 
-  // Show the saved messages when the page opens. The database keeps only the newest few per employee
-  // (see sql/09_chat_history.sql), so this is the whole history. If it cannot be loaded, the chat still works.
+  // Show the saved messages when the widget opens. The database keeps only the newest few per
+  // employee (see sql/09_chat_history.sql), so this is the whole history. If it cannot be loaded,
+  // the chat still works.
   useEffect(() => {
     if (!session) {
       return;
@@ -79,7 +83,7 @@ export function ChatPage() {
     return () => abortController.abort();
   }, [session]);
 
-  // Stop an unfinished request if the user leaves this page.
+  // Stop an unfinished request if the widget closes.
   useEffect(() => () => abortControllerReference.current?.abort(), []);
 
   /** Adds a message at the bottom and returns its id. */
@@ -151,12 +155,12 @@ export function ChatPage() {
   }
 
   return (
-    <div className="mx-auto flex h-full max-w-3xl flex-col px-4">
-      <div className="flex-1 space-y-4 no-scrollbar overflow-y-auto py-4" aria-live="polite">
+    <div className="flex h-full flex-col px-3">
+      <div className="flex-1 space-y-4 no-scrollbar overflow-y-auto py-3" aria-live="polite">
         {messages.length === 0 && (
-          <div className="mt-10 text-center">
-            <h1 className="page-title">Ask about company HR policies</h1>
-            <p className="mt-1 text-sm text-ink-2">Try one of these:</p>
+          <div className="mt-4 text-center">
+            <h2 className="text-sm font-semibold text-ink">Ask about company HR policies</h2>
+            <p className="mt-1 text-xs text-ink-2">Try one of these:</p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
               {STARTER_QUESTIONS.map((starterQuestion) => (
                 <button
@@ -164,7 +168,7 @@ export function ChatPage() {
                   type="button"
                   disabled={isWaiting}
                   onClick={() => void sendQuestion(starterQuestion, true)}
-                  className="btn btn-sm btn-quiet rounded-full"
+                  className="btn btn-sm btn-quiet rounded-full text-xs"
                 >
                   {starterQuestion}
                 </button>
@@ -227,7 +231,7 @@ export function ChatPage() {
             onKeyDown={handleKeyDown}
             rows={2}
             placeholder="Type your question and press Enter"
-            className="field block flex-1 resize-none"
+            className="field block flex-1 resize-none text-sm"
           />
           <button
             type="submit"
@@ -255,7 +259,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   if (message.author === "user") {
     return (
       <div className="flex justify-end">
-        <p className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand px-4 py-2.5 text-sm text-brand-ink">{message.text}</p>
+        <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-brand px-3 py-2 text-sm text-brand-ink">{message.text}</p>
       </div>
     );
   }
@@ -263,7 +267,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   if (message.author === "error") {
     return (
       <div className="flex justify-start">
-        <div role="alert" className="max-w-[80%] rounded-2xl rounded-bl-md border border-bad/30 bg-bad-soft px-4 py-2.5 text-sm text-bad">
+        <div role="alert" className="max-w-[85%] rounded-2xl rounded-bl-md border border-bad/30 bg-bad-soft px-3 py-2 text-sm text-bad">
           <p>{message.text}</p>
           {message.failedQuestion && (
             <button
@@ -285,7 +289,7 @@ function MessageBubble({ message, isBusy, onRetry }: MessageBubbleProps) {
   return (
     <div className="flex justify-start">
       <div
-        className={`max-w-[80%] rounded-2xl rounded-bl-md border px-4 py-2.5 text-sm shadow-card ${
+        className={`max-w-[85%] rounded-2xl rounded-bl-md border px-3 py-2 text-sm shadow-card ${
           isUnanswerable ? "border-line bg-surface-2 text-ink-2" : "border-line bg-surface text-ink"
         }`}
       >

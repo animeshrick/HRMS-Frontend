@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
 import { App } from "../app/App";
 import { formatFullTime, formatShortTime } from "../lib/time";
-import { callsTo, mockRoutes, renderWithProviders, storeSession } from "./renderWithProviders";
+import { callsTo, mockRoutes, openChatWidget, renderWithProviders, storeSession } from "./renderWithProviders";
 
 function savedMessage(id: number, sender: "user" | "assistant", message: string, createdAt: string) {
   return { id, sender, message, sources: [], created_at: createdAt };
@@ -34,7 +34,8 @@ describe("chat history", () => {
         ],
       },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     expect(await screen.findByText("You have 8 casual leaves.")).toBeInTheDocument();
     expect(screen.getByText("How many casual leaves do I have?")).toBeInTheDocument();
     const times = screen.getAllByText("08 Nov 2026, 10:41 PM");
@@ -46,7 +47,8 @@ describe("chat history", () => {
   it("shows the whole saved history in one request and never asks for an older page", async () => {
     const wholeHistory = Array.from({ length: 10 }, (_, index) => savedMessage(101 + index, "user", `message ${101 + index}`, "2026-11-08T17:11:35Z"));
     const fetchMock = mockRoutes({ "GET /chat/history": { body: wholeHistory } });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     expect(await screen.findByText("message 110")).toBeInTheDocument();
     expect(screen.getByText("message 101")).toBeInTheDocument();
     expect(callsTo(fetchMock, "GET /chat/history")).toHaveLength(1);
@@ -64,7 +66,8 @@ describe("chat history", () => {
         },
       },
     });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/change-password");
+    await openChatWidget();
     await userEvent.type(screen.getByLabelText("Your question"), "hi{Enter}");
     const answer = await screen.findByText("Hello there.");
     expect(answer).toBeInTheDocument();

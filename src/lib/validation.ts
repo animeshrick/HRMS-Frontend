@@ -64,6 +64,36 @@ export function validateDocument(file: File): string | null {
   return null;
 }
 
+export const MAXIMUM_MESSAGE_BODY_LENGTH = 2000;
+export const MAXIMUM_MESSAGE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+const ALLOWED_MESSAGE_ATTACHMENT_TYPES = ["application/pdf", "image/png", "image/jpeg"];
+
+/** A message needs text, an attachment, or both - never neither. Same limit as the backend. */
+export function validateMessageBody(body: string, hasAttachment: boolean): string | null {
+  const trimmedBody = body.trim();
+  if (trimmedBody.length === 0 && !hasAttachment) {
+    return "Write a message or attach a file.";
+  }
+  if (trimmedBody.length > MAXIMUM_MESSAGE_BODY_LENGTH) {
+    return `A message can have at most ${MAXIMUM_MESSAGE_BODY_LENGTH} characters.`;
+  }
+  return null;
+}
+
+/** Same limits as the backend: PDF, PNG or JPG, at most 5 MB. */
+export function validateMessageAttachment(file: File): string | null {
+  if (!ALLOWED_MESSAGE_ATTACHMENT_TYPES.includes(file.type)) {
+    return "Only PDF, PNG or JPG files can be attached.";
+  }
+  if (file.size === 0) {
+    return "The file is empty.";
+  }
+  if (file.size > MAXIMUM_MESSAGE_ATTACHMENT_BYTES) {
+    return "The file is too large. The limit is 5 MB.";
+  }
+  return null;
+}
+
 export const MAXIMUM_SHARED_DOCUMENT_BYTES = 20 * 1024 * 1024;
 const ALLOWED_SHARED_DOCUMENT_TYPES = [
   "application/pdf",

@@ -143,11 +143,11 @@ describe("attendance page", () => {
     expect(screen.queryByRole("link", { name: "Team attendance" })).not.toBeInTheDocument();
   });
 
-  it("the CEO has no attendance link and is sent to the chat", async () => {
+  it("the CEO has no attendance link, but the rest of the nav still works", async () => {
     storeSession({ role: "ceo", attendanceAccess: "none" });
     mockRoutes({});
     renderWithProviders(<App />, "/attendance");
-    expect(await screen.findByRole("link", { name: "Chat" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Home" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Attendance" })).not.toBeInTheDocument();
   });
 });

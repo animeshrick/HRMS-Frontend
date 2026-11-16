@@ -26,7 +26,7 @@ describe("my profile (/me)", () => {
 
   it("is reachable from the menu", async () => {
     mockRoutes({ "GET /me/profile": { body: PROFILE } });
-    renderWithProviders(<App />, "/chat");
+    renderWithProviders(<App />, "/me");
     expect(await screen.findByRole("link", { name: "My profile" })).toHaveAttribute("href", "/me");
   });
 

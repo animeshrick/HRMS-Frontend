@@ -6,6 +6,7 @@ import { getCelebrations } from "../api/celebrations";
 import { getApprovals, getBalances } from "../api/leave";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
+import { AI_CHAT_OPEN_EVENT } from "../components/AiChatWidget";
 import { TodayCard } from "../components/TodayCard";
 import { Card, CardTitle, PageHeader } from "../components/ui";
 import { describeError } from "../lib/errors";
@@ -128,9 +129,13 @@ export function HomePage() {
       <Card label="Quick links">
         <CardTitle>Ask the assistant</CardTitle>
         <p className="text-sm text-ink-2">Ask about policies, apply for leave or check a balance in plain words.</p>
-        <Link to="/chat" className="btn btn-primary mt-3">
-          Open chat
-        </Link>
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent(AI_CHAT_OPEN_EVENT))}
+          className="btn btn-primary mt-3"
+        >
+          Chat with the assistant
+        </button>
       </Card>
     </div>
   );

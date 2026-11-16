@@ -26,3 +26,17 @@ export const LogoutIcon = () => <Icon><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0
 export const FolderIcon = () => <Icon><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></Icon>;
 export const PayslipIcon = () => <Icon><rect x="5" y="3" width="14" height="18" rx="1.5" /><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4" /></Icon>;
 export const WfhIcon = () => <Icon><path d="M4 11l8-6 8 6" /><path d="M6 10v10h12V10" /><rect x="9" y="13" width="6" height="4.5" rx="0.5" /><path d="M9 20.5h6" /></Icon>;
+
+// The AI assistant's floating chat button - an original robot-head glyph (antenna, scanner eyes,
+// side sensor tabs) so the button reads clearly as "AI bot" rather than a literal insect.
+export const BotIcon = () => (
+  <Icon size={26}>
+    <rect x="5.5" y="7" width="13" height="11" rx="3" />
+    <path d="M12 7V4.2" />
+    <circle cx="12" cy="3.2" r="1" />
+    <circle cx="9" cy="12" r="1.3" />
+    <circle cx="15" cy="12" r="1.3" />
+    <path d="M9 15.8h6" />
+    <path d="M5.5 10.5H3.3M5.5 13.5H3.3M18.5 10.5h2.2M18.5 13.5h2.2" />
+  </Icon>
+);
