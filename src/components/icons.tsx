@@ -23,3 +23,6 @@ export const MoonIcon = () => <Icon><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 
 export const MenuIcon = () => <Icon size={20}><path d="M4 7h16M4 12h16M4 17h16" /></Icon>;
 export const CloseIcon = () => <Icon size={20}><path d="M6 6l12 12M18 6L6 18" /></Icon>;
 export const LogoutIcon = () => <Icon><path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" /><path d="M16 8l4 4-4 4M20 12H9" /></Icon>;
+export const FolderIcon = () => <Icon><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></Icon>;
+export const PayslipIcon = () => <Icon><rect x="5" y="3" width="14" height="18" rx="1.5" /><path d="M8.5 8h7M8.5 11.5h7M8.5 15h4" /></Icon>;
+export const WfhIcon = () => <Icon><path d="M4 11l8-6 8 6" /><path d="M6 10v10h12V10" /><rect x="9" y="13" width="6" height="4.5" rx="0.5" /><path d="M9 20.5h6" /></Icon>;

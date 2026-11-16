@@ -365,7 +365,7 @@ function PendingActionBar({ token, action, onAnswer }: PendingActionBarProps) {
             type="file"
             accept="application/pdf,image/png,image/jpeg"
             onChange={(event) => void handleFileChosen(event.target.files?.[0])}
-            className="max-w-48 text-xs"
+            className="file-input max-w-56 text-xs file:py-1 file:text-xs"
           />
         </label>
       )}

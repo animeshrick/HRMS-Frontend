@@ -6,7 +6,7 @@ import { renderWithProviders, storeSession } from "../test/renderWithProviders";
 
 // Requests the layout makes by itself on every page (the notification bell). They are answered
 // separately so they never consume a reply the test queued for its own calls.
-const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations", "/admin/attendance-settings"];
+const BACKGROUND_PATHS = ["/leave/mine", "/attendance/corrections/mine", "/leave/balances", "/leave/approvals", "/attendance/today", "/attendance/mine", "/celebrations", "/admin/attendance-settings", "/documents/requests/inbox", "/documents/requests/mine", "/system/downtime"];
 const EMPTY_MONTH = { summary: { present: 0, half_day: 0, late_days: 0 }, days: [] };
 const EMPTY_ADMIN_SETTINGS = { network_check_enabled: false, office_networks: [] };
 
@@ -29,7 +29,9 @@ function mockFetchSequence(...responses: Array<{ status: number; body: unknown }
           ? {}
           : String(url).includes("/admin/attendance-settings")
             ? EMPTY_ADMIN_SETTINGS
-            : [];
+            : String(url).includes("/system/downtime")
+              ? { down_pages: [] }
+              : [];
       return new Response(JSON.stringify(body), { status: 200 });
     }
     const next = queued.shift();

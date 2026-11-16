@@ -27,4 +27,28 @@ describe("notification bell", () => {
     expect(screen.getByText("Rejected: No proof")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "No new notifications" })).toBeInTheDocument();
   });
+
+  it("shows a pending document request and a decided one, and clears the dot once opened", async () => {
+    storeSession();
+    mockRoutes({
+      "GET /attendance/corrections/mine": { body: [] },
+      "GET /attendance/today": { body: {} },
+      "GET /documents/requests/inbox": {
+        body: [{ id: 1, document: { id: 9, original_filename: "handbook.pdf" }, requester: { emp_id: "EMP002", full_name: "Ann Employee" }, requested_at: "2026-11-10T00:00:00Z" }],
+      },
+      "GET /documents/requests/mine": {
+        body: [{ id: 2, document: { id: 10, original_filename: "my-notes.docx" }, status: "approved", requested_at: "2026-11-01T00:00:00Z", decided_at: "2026-11-02T00:00:00Z", expires_at: "2099-01-01T00:00:00Z", is_active: true }],
+      },
+    });
+    renderWithProviders(<App />, "/chat");
+    const bell = await screen.findByRole("button", { name: "2 new decisions" });
+    await userEvent.click(bell);
+    expect(screen.getByText("Document requests waiting for you")).toBeInTheDocument();
+    expect(screen.getByText("handbook.pdf")).toBeInTheDocument();
+    expect(screen.getByText(/Ann Employee \(EMP002\) asked for access/)).toBeInTheDocument();
+    expect(screen.getByText("Document access decisions")).toBeInTheDocument();
+    expect(screen.getByText("my-notes.docx")).toBeInTheDocument();
+    expect(screen.getByText("Approved - view-only for a limited time")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "No new notifications" })).toBeInTheDocument();
+  });
 });

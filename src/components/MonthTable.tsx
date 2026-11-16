@@ -9,6 +9,7 @@ const STATUS_TEXT: Record<string, string> = {
   absent: "Absent",
   incomplete: "No check-out",
   on_leave: "On leave",
+  wfh: "WFH",
   holiday: "Holiday",
   weekend: "Weekend",
   checked_in: "Checked in",
@@ -22,6 +23,7 @@ const CELL_COLOUR: Record<string, string> = {
   absent: "bg-bad-soft text-bad",
   incomplete: "bg-bad-soft text-bad",
   on_leave: "bg-leave-soft text-leave",
+  wfh: "bg-wfh-soft text-wfh",
   holiday: "bg-holiday-soft text-holiday",
   weekend: "bg-surface-2 text-ink-3",
   checked_in: "bg-ok-soft text-ok",
@@ -36,6 +38,7 @@ const STATUS_COLOUR: Record<string, string> = {
   absent: "text-bad",
   incomplete: "text-bad",
   on_leave: "text-leave",
+  wfh: "text-wfh",
   checked_in: "text-ok",
 };
 
@@ -84,8 +87,8 @@ export function MonthTable({ month }: { month: AttendanceMonth }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-ink-2">
-        Present {summary.present}, half day {summary.half_day}, absent {summary.absent}, on leave {summary.on_leave}, late {summary.late_days}, early
-        leave {summary.early_leave_days}. Worked {formatMinutes(summary.worked_minutes)}.
+        Present {summary.present}, half day {summary.half_day}, absent {summary.absent}, on leave {summary.on_leave}, working from home{" "}
+        {summary.wfh}, late {summary.late_days}, early leave {summary.early_leave_days}. Worked {formatMinutes(summary.worked_minutes)}.
         {summary.incomplete > 0 && ` No check-out on ${summary.incomplete} day(s).`}
       </p>
       <div className="grid grid-cols-7 gap-1 text-center text-xs text-ink-3">
@@ -123,7 +126,7 @@ export function MonthTable({ month }: { month: AttendanceMonth }) {
         ))}
       </div>
       <p className="text-xs text-ink-3">
-        Green present, yellow half day, red absent or no check-out, purple leave, blue holiday. L is late, E is early leave.
+        Green present, yellow half day, red absent or no check-out, purple leave, teal WFH, blue holiday. L is late, E is early leave.
       </p>
       {shownDay ? <DayDetails day={shownDay} /> : <p className="text-sm text-ink-3">Hover or click a day to see the details.</p>}
     </div>

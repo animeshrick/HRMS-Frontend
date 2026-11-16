@@ -63,3 +63,30 @@ export function validateDocument(file: File): string | null {
   }
   return null;
 }
+
+export const MAXIMUM_SHARED_DOCUMENT_BYTES = 20 * 1024 * 1024;
+const ALLOWED_SHARED_DOCUMENT_TYPES = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+];
+
+/** Same limits as the backend: PDF, Word, Excel, PowerPoint, PNG or JPG, at most 20 MB. */
+export function validateSharedDocument(file: File): string | null {
+  if (!ALLOWED_SHARED_DOCUMENT_TYPES.includes(file.type)) {
+    return "That file type is not allowed. Use PDF, Word, Excel, PowerPoint, PNG or JPG.";
+  }
+  if (file.size === 0) {
+    return "The file is empty.";
+  }
+  if (file.size > MAXIMUM_SHARED_DOCUMENT_BYTES) {
+    return "The file is too large. The limit is 20 MB.";
+  }
+  return null;
+}

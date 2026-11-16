@@ -2,12 +2,16 @@ import { useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPersonMonth } from "../api/attendance";
 import {
+  addWhatsappNumber,
   applyLeaveFor,
   getBalancesFor,
   getSuperadminAuditLog,
   getSuperadminEmployees,
   getSuperadminLeaveTypes,
+  getWhatsappNumbers,
   markAttendanceFor,
+  removeWhatsappNumber,
+  sendWhatsappReportNow,
 } from "../api/superadmin";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
@@ -15,7 +19,7 @@ import { Loading } from "../components/Loading";
 import { DayMarks, statusText } from "../components/MonthTable";
 import { TimeField } from "../components/TimeField";
 import { useToast } from "../components/Toast";
-import { BUTTON_PRIMARY, Card, CardTitle, INPUT, PageHeader } from "../components/ui";
+import { BUTTON_PRIMARY, BUTTON_QUIET, Card, CardTitle, INPUT, PageHeader } from "../components/ui";
 import { describeError } from "../lib/errors";
 import { companyToday, formatClock, formatMinutes, formatShortTime } from "../lib/time";
 
@@ -31,9 +35,33 @@ export function SuperadminPage() {
   const employeesQuery = useQuery({ queryKey: ["superadmin-employees"], queryFn: () => getSuperadminEmployees(token) });
   const leaveTypesQuery = useQuery({ queryKey: ["superadmin-leave-types"], queryFn: () => getSuperadminLeaveTypes(token) });
   const auditLogQuery = useQuery({ queryKey: ["superadmin-audit-log"], queryFn: () => getSuperadminAuditLog(token) });
+  const whatsappNumbersQuery = useQuery({ queryKey: ["superadmin-whatsapp-numbers"], queryFn: () => getWhatsappNumbers(token) });
   const employees = employeesQuery.data ?? [];
   const leaveCardReference = useRef<HTMLDivElement>(null);
   const attendanceCardReference = useRef<HTMLDivElement>(null);
+
+  // ---- WhatsApp daily report numbers
+  const [whatsappLabel, setWhatsappLabel] = useState("");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const whatsappNumbers = whatsappNumbersQuery.data ?? [];
+  const addWhatsappMutation = useMutation({
+    mutationFn: () => addWhatsappNumber(token, whatsappLabel.trim(), whatsappPhone.trim()),
+    onSuccess: () => {
+      setWhatsappLabel("");
+      setWhatsappPhone("");
+      queryClient.invalidateQueries({ queryKey: ["superadmin-whatsapp-numbers"] });
+    },
+  });
+  const removeWhatsappMutation = useMutation({
+    mutationFn: (numberId: number) => removeWhatsappNumber(token, numberId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["superadmin-whatsapp-numbers"] }),
+  });
+  const sendWhatsappNowMutation = useMutation({ mutationFn: () => sendWhatsappReportNow(token) });
+
+  function submitWhatsappNumber(event: FormEvent) {
+    event.preventDefault();
+    addWhatsappMutation.mutate();
+  }
 
   // ---- find an employee
   const [search, setSearch] = useState("");
@@ -355,6 +383,84 @@ export function SuperadminPage() {
                     : `attendance set for ${String(entry.details.work_date ?? "")}`}
                 </span>
                 <span className="ml-2 text-ink-3">{formatShortTime(entry.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card label="WhatsApp report numbers">
+        <CardTitle>Daily WhatsApp report</CardTitle>
+        <p className="mb-3 text-sm text-ink-2">
+          Up to 10 numbers get attendance, leave and WFH for the day, sent at 11am and 5pm. Add up to 10; remove one to make room for another.
+        </p>
+        {whatsappNumbersQuery.isLoading && <p className="text-sm text-ink-3">Loading...</p>}
+        {whatsappNumbersQuery.isError && <ErrorMessage message={describeError(whatsappNumbersQuery.error)} />}
+        {whatsappNumbersQuery.data && whatsappNumbersQuery.data.length === 0 && <p className="text-sm text-ink-3">No numbers added yet.</p>}
+        {whatsappNumbers.length > 0 && (
+          <ul className="mb-3 space-y-1.5">
+            {whatsappNumbers.map((number) => (
+              <li key={number.id} className="flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 text-sm">
+                <span>
+                  <span className="font-medium text-ink">{number.label}</span> <span className="text-ink-2">{number.phone_number}</span>
+                </span>
+                <button
+                  type="button"
+                  disabled={removeWhatsappMutation.isPending && removeWhatsappMutation.variables === number.id}
+                  onClick={() => removeWhatsappMutation.mutate(number.id)}
+                  className="text-xs text-bad underline disabled:opacity-60"
+                >
+                  {removeWhatsappMutation.isPending && removeWhatsappMutation.variables === number.id ? "Removing..." : "Remove"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {removeWhatsappMutation.isError && <ErrorMessage message={describeError(removeWhatsappMutation.error)} />}
+
+        <form onSubmit={submitWhatsappNumber} className="grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">
+            Label
+            <input
+              value={whatsappLabel}
+              onChange={(event) => setWhatsappLabel(event.target.value)}
+              placeholder="e.g. Debayan"
+              maxLength={100}
+              className={`${INPUT} mt-1 block w-full`}
+            />
+          </label>
+          <label className="text-sm">
+            Phone number
+            <input
+              value={whatsappPhone}
+              onChange={(event) => setWhatsappPhone(event.target.value)}
+              placeholder="+91 98765 43210"
+              className={`${INPUT} mt-1 block w-full`}
+            />
+          </label>
+          <div className="sm:col-span-2 flex items-center gap-3">
+            <button type="submit" disabled={addWhatsappMutation.isPending || whatsappNumbers.length >= 10} className={BUTTON_PRIMARY}>
+              {addWhatsappMutation.isPending ? "Adding..." : "Add number"}
+            </button>
+            <button
+              type="button"
+              disabled={sendWhatsappNowMutation.isPending || whatsappNumbers.length === 0}
+              onClick={() => sendWhatsappNowMutation.mutate()}
+              className={BUTTON_QUIET}
+            >
+              {sendWhatsappNowMutation.isPending ? "Sending..." : "Send report now"}
+            </button>
+          </div>
+        </form>
+        {addWhatsappMutation.isError && <ErrorMessage message={describeError(addWhatsappMutation.error)} />}
+        {sendWhatsappNowMutation.isError && <ErrorMessage message={describeError(sendWhatsappNowMutation.error)} />}
+        {sendWhatsappNowMutation.data && (
+          <ul className="mt-3 space-y-1" data-testid="whatsapp-send-now-results">
+            {sendWhatsappNowMutation.data.map((result) => (
+              <li key={result.phone_number} className="text-sm">
+                <span className={result.ok ? "text-ink-2" : "text-bad"}>
+                  {result.label} ({result.phone_number}): {result.ok ? "Sent" : result.error ?? "Failed"}
+                </span>
               </li>
             ))}
           </ul>

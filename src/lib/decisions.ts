@@ -4,7 +4,7 @@
 // browser only. That is enough for a red dot: the worst case is that the dot comes
 // back on another device, never that a decision is missed.
 
-import type { AttendanceCorrection, LeaveRequestRow } from "../api/types";
+import type { AttendanceCorrection, LeaveRequestRow, MyDocumentRequest } from "../api/types";
 
 const STORAGE_KEY = "seen-leave-decisions";
 
@@ -25,11 +25,18 @@ export function decisionSummary(leave: LeaveRequestRow): string {
   return note ? `${verb}${by}: ${note}` : `${verb}${by}`;
 }
 
-/** "leave" decisions and "correction" (attendance) decisions have their own ids, so each keeps its own list. */
-export type NotificationKind = "leave" | "correction";
+/** Each kind of notification has its own ids, so each keeps its own "seen" list. */
+export type NotificationKind = "leave" | "correction" | "document-request" | "document-decision";
+
+const STORAGE_KEY_BY_KIND: Record<NotificationKind, string> = {
+  leave: STORAGE_KEY,
+  correction: "seen-correction-decisions",
+  "document-request": "seen-document-requests",
+  "document-decision": "seen-document-decisions",
+};
 
 function storageKeyFor(employeeId: number | string, kind: NotificationKind): string {
-  return kind === "leave" ? `${STORAGE_KEY}:${employeeId}` : `seen-correction-decisions:${employeeId}`;
+  return `${STORAGE_KEY_BY_KIND[kind]}:${employeeId}`;
 }
 
 export type DecidedCorrection = AttendanceCorrection & { status: "approved" | "rejected" };
@@ -62,3 +69,18 @@ export function writeSeenIds(employeeId: number | string, ids: number[], kind: N
     // Storing is a convenience; the app works without it.
   }
 }
+
+export type DecidedDocumentRequest = MyDocumentRequest & { status: "approved" | "denied" };
+
+export function isDocumentRequestDecided(request: MyDocumentRequest): request is DecidedDocumentRequest {
+  return request.status === "approved" || request.status === "denied";
+}
+
+/** "Approved - view-only until 20 Nov 2026" or "Denied". */
+export function documentDecisionSummary(request: DecidedDocumentRequest): string {
+  if (request.status === "denied") {
+    return "Denied";
+  }
+  return request.is_active ? "Approved - view-only for a limited time" : "Approved, but access has since expired";
+}
+

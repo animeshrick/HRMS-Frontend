@@ -30,6 +30,8 @@
   --bad-soft: #fbe2e0;
   --leave: #5b4bc4;
   --leave-soft: #e8e4fb;
+  --wfh: #0d7d6f;
+  --wfh-soft: #d9f0ea;
   --holiday: #1b6e9e;
   --holiday-soft: #dceefa;
   --shadow-card: 0 1px 2px rgb(20 20 22 / 0.05), 0 6px 20px rgb(20 20 22 / 0.04);
@@ -63,6 +65,8 @@
   --bad-soft: #401c1a;
   --leave: #a99df2;
   --leave-soft: #2a2450;
+  --wfh: #5fd4c3;
+  --wfh-soft: #133833;
   --holiday: #7cc4ee;
   --holiday-soft: #14344a;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3);
@@ -97,6 +101,8 @@
   --color-bad-soft: var(--bad-soft);
   --color-leave: var(--leave);
   --color-leave-soft: var(--leave-soft);
+  --color-wfh: var(--wfh);
+  --color-wfh-soft: var(--wfh-soft);
   --color-holiday: var(--holiday);
   --color-holiday-soft: var(--holiday-soft);
   --shadow-card: var(--shadow-card);
@@ -132,6 +138,9 @@ body {
   .btn-bad { @apply bg-bad text-white hover:brightness-110 dark:text-black; }
   .field { @apply rounded-xl border border-line bg-surface px-3 py-2 text-sm text-ink transition duration-150 placeholder:text-ink-3 hover:border-ink-3 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/15; }
   .notice { @apply rounded-xl border px-3 py-2 text-sm; }
+  /* The browser's native "Choose File" button ignores page colours by default, so on its own it looks like a
+     disconnected grey widget and is easy to miss, especially in dark mode. This makes it look like our own buttons. */
+  .file-input { @apply block w-full cursor-pointer text-sm text-ink-2 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-line file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-ink file:transition file:duration-150 hover:file:border-ink-3 hover:file:bg-surface; }
 }
 @keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 

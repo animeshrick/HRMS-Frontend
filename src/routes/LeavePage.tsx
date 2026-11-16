@@ -8,21 +8,27 @@ import { FormField } from "../components/FormField";
 import { Loading, SkeletonRows } from "../components/Loading";
 import { describeError } from "../lib/errors";
 import { decisionSummary } from "../lib/decisions";
-import { companyToday } from "../lib/time";
+import { canCancelLeave } from "../lib/leave";
 import { validateDocument } from "../lib/validation";
-import type { LeaveRequestRow } from "../api/types";
 
-// Mirrors check_cancellable in the backend (app/hr/leave/service.py): a pending leave,
-// or an approved one that has not started yet. Showing a Cancel button the server would
-// refuse only teaches people to ignore error messages.
-function canCancel(leave: LeaveRequestRow): boolean {
-  if (leave.status === "pending") {
-    return true;
+// Work From Home has its own page (see WfhPage.tsx): it isn't really "leave", so it is left out
+// of this page's balances, the type dropdown, and the requests list below.
+const EXCLUDED_FROM_LEAVE_PAGE = "wfh";
+
+// A rough, calendar-day estimate of the length of the request being filled in, used only to show
+// the "a document will be needed" hint before the employee submits. The server (count_leave_days)
+// is authoritative and skips weekends/holidays; this estimate only ever needs a document earlier,
+// never later, than the server would.
+function estimateDays(startDate: string, endDate: string, dayType: "full" | "half"): number {
+  if (dayType === "half") {
+    return 0.5;
   }
-  if (leave.status !== "approved") {
-    return false;
+  if (!startDate) {
+    return 0;
   }
-  return leave.start_date >= companyToday();
+  const end = endDate || startDate;
+  const diff = (new Date(`${end}T00:00:00Z`).getTime() - new Date(`${startDate}T00:00:00Z`).getTime()) / 86_400_000;
+  return Number.isFinite(diff) && diff >= 0 ? diff + 1 : 0;
 }
 
 export function LeavePage() {
@@ -45,10 +51,15 @@ export function LeavePage() {
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const balances = balancesQuery.data ?? [];
+  const balances = (balancesQuery.data ?? []).filter((balance) => balance.type_code !== EXCLUDED_FROM_LEAVE_PAGE);
   const selectedType = balances.find((balance) => balance.type_code === leaveType);
-  // Types that cannot be applied in the chat (maternity) always need a document here.
-  const documentIsRequired = selectedType ? !selectedType.can_apply_by_chat : false;
+  const estimatedDays = selectedType ? estimateDays(startDate, endDate, dayType) : 0;
+  // Maternity always needs a document (it cannot be applied in the chat); Sick Leave needs one once
+  // a single request runs past its threshold (require_document_above_days, e.g. more than 1 day).
+  const documentIsRequired = selectedType
+    ? !selectedType.can_apply_by_chat ||
+      (selectedType.require_document_above_days != null && estimatedDays > selectedType.require_document_above_days)
+    : false;
 
   function refreshLeaveData() {
     void queryClient.invalidateQueries({ queryKey: ["balances", employeeId] });
@@ -190,7 +201,7 @@ export function LeavePage() {
             type="file"
             accept="application/pdf,image/png,image/jpeg"
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-            className="mt-1 block w-full text-sm"
+            className="file-input mt-1"
           />
         </div>
         <ErrorMessage message={formError ?? (applyMutation.isError ? describeError(applyMutation.error) : null)} />
@@ -213,9 +224,13 @@ export function LeavePage() {
         {leavesQuery.isError && <ErrorMessage message={describeError(leavesQuery.error)} />}
         {cancelMutation.isError && <ErrorMessage message={describeError(cancelMutation.error)} />}
         {leavesQuery.isPending && <SkeletonRows rows={3} />}
-        {leavesQuery.data?.length === 0 && <p className="text-sm text-ink-3">No leave requests yet.</p>}
-        <ul className="divide-y divide-line">
-          {leavesQuery.data?.map((leave) => (
+        {(() => {
+          const myLeaves = (leavesQuery.data ?? []).filter((leave) => leave.leave_type !== EXCLUDED_FROM_LEAVE_PAGE);
+          return (
+            <>
+              {leavesQuery.data && myLeaves.length === 0 && <p className="text-sm text-ink-3">No leave requests yet.</p>}
+              <ul className="divide-y divide-line">
+                {myLeaves.map((leave) => (
             <li key={leave.id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="min-w-0">
                 <span className="block">
@@ -225,7 +240,7 @@ export function LeavePage() {
               </span>
               <span className="flex items-center gap-2">
                 <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs capitalize">{leave.status}</span>
-                {canCancel(leave) && (
+                {canCancelLeave(leave) && (
                   <button
                     type="button"
                     disabled={cancelMutation.isPending}
@@ -237,8 +252,11 @@ export function LeavePage() {
                 )}
               </span>
             </li>
-          ))}
-        </ul>
+                ))}
+              </ul>
+            </>
+          );
+        })()}
       </section>
     </div>
   );

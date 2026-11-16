@@ -7,16 +7,19 @@ import {
   ChatIcon,
   ClockIcon,
   CloseIcon,
+  FolderIcon,
   HomeIcon,
   KeyIcon,
   LeaveIcon,
   LogoutIcon,
   MenuIcon,
   MoonIcon,
+  PayslipIcon,
   ShieldIcon,
   SunIcon,
   TeamIcon,
   UserIcon,
+  WfhIcon,
 } from "./icons";
 import { Logo } from "./Logo";
 import { NotificationBell } from "./NotificationBell";
@@ -39,9 +42,12 @@ function buildNavigation(session: Session): { title: string; items: NavItem[] }[
   const work: NavItem[] = [
     { to: "/home", label: "Home", icon: <HomeIcon /> },
     { to: "/chat", label: "Chat", icon: <ChatIcon /> },
+    { to: "/documents", label: "Documents", icon: <FolderIcon /> },
   ];
   if (!isSuperadmin) {
     work.push({ to: "/leave", label: "Leave", icon: <LeaveIcon /> });
+    work.push({ to: "/wfh", label: "Work from home", icon: <WfhIcon /> });
+    work.push({ to: "/payslips", label: "Payslips", icon: <PayslipIcon /> });
   }
   if (!isSuperadmin && session.attendanceAccess !== "none") {
     work.push({ to: "/attendance", label: "Attendance", icon: <ClockIcon />, end: true });

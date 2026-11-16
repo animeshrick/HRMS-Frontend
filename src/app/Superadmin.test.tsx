@@ -20,6 +20,7 @@ const ROUTES = {
   },
   "GET /superadmin/leave-types": { body: [{ code: "casual", name: "Casual Leave" }] },
   "GET /superadmin/audit-log": { body: [] },
+  "GET /superadmin/whatsapp-numbers": { body: [] },
 };
 
 describe("super admin page", () => {
@@ -157,5 +158,74 @@ describe("home wishes", () => {
     expect(await screen.findByText(/Happy birthday, Ann!/)).toBeInTheDocument();
     expect(await screen.findByText(/3 years with the company today/)).toBeInTheDocument();
     expect(screen.getByText("Raj Das")).toBeInTheDocument();
+  });
+});
+
+
+describe("WhatsApp report numbers", () => {
+  it("lists the numbers, adds one, and removes one", async () => {
+    storeSession({ role: "superadmin", attendanceAccess: "superadmin" });
+    const fetchMock = mockRoutes({
+      ...ROUTES,
+      "GET /superadmin/whatsapp-numbers": { body: [{ id: 1, label: "Debayan", phone_number: "+919876543210", created_at: "2026-11-01T00:00:00Z" }] },
+      "POST /superadmin/whatsapp-numbers": { body: { id: 2, label: "Priya", phone_number: "+919999999999", created_at: "2026-11-16T00:00:00Z" } },
+      "DELETE /superadmin/whatsapp-numbers/1": { body: { message: "The number was removed." } },
+    });
+    renderWithProviders(<App />, "/superadmin");
+    expect(await screen.findByText("Debayan")).toBeInTheDocument();
+    expect(screen.getByText("+919876543210")).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText("Label"), "Priya");
+    await userEvent.type(screen.getByLabelText("Phone number"), "+919999999999");
+    await userEvent.click(screen.getByRole("button", { name: "Add number" }));
+    expect(callsTo(fetchMock, "POST /superadmin/whatsapp-numbers")[0]![1]).toMatchObject({
+      body: expect.stringContaining('"phone_number":"+919999999999"'),
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove" }));
+    expect(callsTo(fetchMock, "DELETE /superadmin/whatsapp-numbers/1")).toHaveLength(1);
+  });
+
+  it("stops adding once there are already 10 numbers", async () => {
+    storeSession({ role: "superadmin", attendanceAccess: "superadmin" });
+    const tenNumbers = Array.from({ length: 10 }, (_, index) => ({
+      id: index + 1,
+      label: `Number ${index + 1}`,
+      phone_number: `+91900000000${index}`,
+      created_at: "2026-11-01T00:00:00Z",
+    }));
+    mockRoutes({ ...ROUTES, "GET /superadmin/whatsapp-numbers": { body: tenNumbers } });
+    renderWithProviders(<App />, "/superadmin");
+    await screen.findByText("Number 1");
+    expect(screen.getByRole("button", { name: "Add number" })).toBeDisabled();
+  });
+
+  it("surfaces the server's reason when adding is refused", async () => {
+    storeSession({ role: "superadmin", attendanceAccess: "superadmin" });
+    mockRoutes({
+      ...ROUTES,
+      "POST /superadmin/whatsapp-numbers": { status: 409, body: { detail: "That number is already on the list." } },
+    });
+    renderWithProviders(<App />, "/superadmin");
+    await screen.findByText("No numbers added yet.");
+    await userEvent.type(screen.getByLabelText("Label"), "Priya");
+    await userEvent.type(screen.getByLabelText("Phone number"), "+919999999999");
+    await userEvent.click(screen.getByRole("button", { name: "Add number" }));
+    expect(await screen.findByText("That number is already on the list.")).toBeInTheDocument();
+  });
+
+  it("sends the report now and shows a per-number result", async () => {
+    storeSession({ role: "superadmin", attendanceAccess: "superadmin" });
+    mockRoutes({
+      ...ROUTES,
+      "GET /superadmin/whatsapp-numbers": { body: [{ id: 1, label: "Debayan", phone_number: "+919876543210", created_at: "2026-11-01T00:00:00Z" }] },
+      "POST /superadmin/whatsapp-report/send-now": {
+        body: [{ label: "Debayan", phone_number: "+919876543210", ok: false, error: "AiSensy is not set up yet." }],
+      },
+    });
+    renderWithProviders(<App />, "/superadmin");
+    await screen.findByText("Debayan");
+    await userEvent.click(screen.getByRole("button", { name: "Send report now" }));
+    expect(await screen.findByText(/AiSensy is not set up yet\./)).toBeInTheDocument();
   });
 });

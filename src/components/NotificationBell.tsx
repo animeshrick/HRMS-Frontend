@@ -3,9 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { getMyCorrections } from "../api/attendance";
 import { getMyLeaves } from "../api/leave";
+import { getMyRequests, getRequestsInbox } from "../api/documents";
 import { useAuth } from "../app/AuthContext";
 import { describeError } from "../lib/errors";
-import { correctionSummary, decisionSummary, isCorrectionDecided, isDecided, readSeenIds, writeSeenIds } from "../lib/decisions";
+import {
+  correctionSummary,
+  decisionSummary,
+  documentDecisionSummary,
+  isCorrectionDecided,
+  isDecided,
+  isDocumentRequestDecided,
+  readSeenIds,
+  writeSeenIds,
+} from "../lib/decisions";
 import { formatDayLabel } from "../lib/time";
 
 const REFRESH_MILLISECONDS = 60_000; // a decision is not urgent; once a minute is plenty
@@ -16,6 +26,8 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [seenIds, setSeenIds] = useState<number[]>([]);
   const [seenCorrectionIds, setSeenCorrectionIds] = useState<number[]>([]);
+  const [seenDocumentRequestIds, setSeenDocumentRequestIds] = useState<number[]>([]);
+  const [seenDocumentDecisionIds, setSeenDocumentDecisionIds] = useState<number[]>([]);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   const employeeId = session?.employeeId;
@@ -24,6 +36,8 @@ export function NotificationBell() {
     if (employeeId !== undefined) {
       setSeenIds(readSeenIds(employeeId));
       setSeenCorrectionIds(readSeenIds(employeeId, "correction"));
+      setSeenDocumentRequestIds(readSeenIds(employeeId, "document-request"));
+      setSeenDocumentDecisionIds(readSeenIds(employeeId, "document-decision"));
     }
   }, [employeeId]);
 
@@ -44,6 +58,22 @@ export function NotificationBell() {
     refetchOnWindowFocus: true,
   });
 
+  // Documents someone has asked ME for (I am the owner), and the outcome of requests I made myself.
+  const documentsInboxQuery = useQuery({
+    queryKey: ["documents-inbox", employeeId],
+    queryFn: () => getRequestsInbox(session!.accessToken),
+    enabled: Boolean(session) && !session!.mustChangePassword,
+    refetchInterval: REFRESH_MILLISECONDS,
+    refetchOnWindowFocus: true,
+  });
+  const myDocumentRequestsQuery = useQuery({
+    queryKey: ["my-document-requests", employeeId],
+    queryFn: () => getMyRequests(session!.accessToken),
+    enabled: Boolean(session) && !session!.mustChangePassword,
+    refetchInterval: REFRESH_MILLISECONDS,
+    refetchOnWindowFocus: true,
+  });
+
   // Anything other than a list (an error body, a proxy page) must not break the header.
   const decided = useMemo(() => {
     const rows = Array.isArray(leavesQuery.data) ? leavesQuery.data : [];
@@ -59,7 +89,23 @@ export function NotificationBell() {
     () => decidedCorrections.filter((correction) => correction.decision_note !== "Auto" && !seenCorrectionIds.includes(correction.id)),
     [decidedCorrections, seenCorrectionIds],
   );
-  const unseenCount = unseen.length + unseenCorrections.length;
+  const pendingDocumentRequests = useMemo(
+    () => (Array.isArray(documentsInboxQuery.data) ? documentsInboxQuery.data : []),
+    [documentsInboxQuery.data],
+  );
+  const unseenDocumentRequests = useMemo(
+    () => pendingDocumentRequests.filter((request) => !seenDocumentRequestIds.includes(request.id)),
+    [pendingDocumentRequests, seenDocumentRequestIds],
+  );
+  const decidedDocumentRequests = useMemo(() => {
+    const rows = Array.isArray(myDocumentRequestsQuery.data) ? myDocumentRequestsQuery.data : [];
+    return rows.filter(isDocumentRequestDecided);
+  }, [myDocumentRequestsQuery.data]);
+  const unseenDocumentDecisions = useMemo(
+    () => decidedDocumentRequests.filter((request) => !seenDocumentDecisionIds.includes(request.id)),
+    [decidedDocumentRequests, seenDocumentDecisionIds],
+  );
+  const unseenCount = unseen.length + unseenCorrections.length + unseenDocumentRequests.length + unseenDocumentDecisions.length;
 
   // Close when clicking anywhere else, or on Escape.
   useEffect(() => {
@@ -98,6 +144,12 @@ export function NotificationBell() {
         const allCorrectionIds = decidedCorrections.map((correction) => correction.id);
         setSeenCorrectionIds(allCorrectionIds);
         writeSeenIds(employeeId, allCorrectionIds, "correction");
+        const allDocumentRequestIds = pendingDocumentRequests.map((request) => request.id);
+        setSeenDocumentRequestIds(allDocumentRequestIds);
+        writeSeenIds(employeeId, allDocumentRequestIds, "document-request");
+        const allDocumentDecisionIds = decidedDocumentRequests.map((request) => request.id);
+        setSeenDocumentDecisionIds(allDocumentDecisionIds);
+        writeSeenIds(employeeId, allDocumentDecisionIds, "document-decision");
       }
       return willOpen;
     });
@@ -128,13 +180,74 @@ export function NotificationBell() {
 
       {isOpen && (
         <div className="absolute right-0 z-20 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-surface p-2 shadow-pop">
-          {(leavesQuery.isError || correctionsQuery.isError) && (
+          {(leavesQuery.isError || correctionsQuery.isError || documentsInboxQuery.isError || myDocumentRequestsQuery.isError) && (
             <p role="alert" className="px-2 py-2 text-sm text-bad">
-              Could not load your notifications. {describeError(leavesQuery.error ?? correctionsQuery.error)}
+              Could not load your notifications.{" "}
+              {describeError(leavesQuery.error ?? correctionsQuery.error ?? documentsInboxQuery.error ?? myDocumentRequestsQuery.error)}
             </p>
           )}
+          {pendingDocumentRequests.length > 0 && (
+            <>
+              <p className="px-2 py-1 text-xs font-medium text-ink-3">Document requests waiting for you</p>
+              <ul className="max-h-80 divide-y divide-line overflow-y-auto">
+                {pendingDocumentRequests.slice(0, 10).map((request) => (
+                  <li key={`doc-request-${request.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOpen(false);
+                        navigate("/documents");
+                      }}
+                      className="flex w-full items-start gap-2 px-2 py-2 text-left hover:bg-canvas"
+                    >
+                      <span aria-hidden="true" className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand" />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-ink">{request.document.original_filename}</span>
+                        <span className="block text-xs text-ink-3">
+                          {request.requester?.full_name} ({request.requester?.emp_id}) asked for access
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {decidedDocumentRequests.length > 0 && (
+            <>
+              <p className="px-2 py-1 text-xs font-medium text-ink-3">Document access decisions</p>
+              <ul className="max-h-80 divide-y divide-line overflow-y-auto">
+                {decidedDocumentRequests.slice(0, 10).map((request) => (
+                  <li key={`doc-decision-${request.id}`}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOpen(false);
+                        navigate("/documents");
+                      }}
+                      className="flex w-full items-start gap-2 px-2 py-2 text-left hover:bg-canvas"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${request.status === "approved" ? "bg-ok" : "bg-bad"}`}
+                      />
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm text-ink">{request.document.original_filename}</span>
+                        <span className={`block text-xs ${request.status === "approved" ? "text-ok" : "text-bad"}`}>
+                          {documentDecisionSummary(request)}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
           {decided.length > 0 && <p className="px-2 py-1 text-xs font-medium text-ink-3">Leave decisions</p>}
-          {decided.length === 0 && decidedCorrections.length === 0 && <p className="px-2 py-3 text-sm text-ink-3">Nothing decided yet.</p>}
+          {decided.length === 0 &&
+            decidedCorrections.length === 0 &&
+            pendingDocumentRequests.length === 0 &&
+            decidedDocumentRequests.length === 0 && <p className="px-2 py-3 text-sm text-ink-3">Nothing decided yet.</p>}
           {decided.length > 0 && (
             <ul className="max-h-80 divide-y divide-line overflow-y-auto">
               {decided.slice(0, 10).map((leave) => (

@@ -11,7 +11,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
 }
 
 export interface RequestOptions {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "DELETE";
   rawBody?: BodyInit; // a file to send as is (uploads); then contentType is required
   contentType?: string;
   body?: unknown;

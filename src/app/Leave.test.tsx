@@ -7,8 +7,10 @@ import { callsTo, mockRoutes, renderWithProviders, storeSession } from "../test/
 afterEach(() => vi.unstubAllGlobals());
 
 const BALANCES = [
-  { type_code: "casual", type_name: "Casual Leave", limit_type: "per_year", days_allowed: 8, used_days: 4, pending_days: 1, remaining_days: 3, max_days_per_request: 7, can_apply_by_chat: true },
-  { type_code: "maternity", type_name: "Maternity Leave", limit_type: "per_request", days_allowed: 90, used_days: 0, pending_days: 0, remaining_days: null, max_days_per_request: null, can_apply_by_chat: false },
+  { type_code: "casual", type_name: "Casual Leave", limit_type: "per_year", days_allowed: 8, used_days: 4, pending_days: 1, remaining_days: 3, max_days_per_request: 7, can_apply_by_chat: true, require_document_above_days: null },
+  { type_code: "sick", type_name: "Sick Leave", limit_type: "per_year", days_allowed: 12, used_days: 0, pending_days: 0, remaining_days: 12, max_days_per_request: 7, can_apply_by_chat: true, require_document_above_days: 1 },
+  { type_code: "maternity", type_name: "Maternity Leave", limit_type: "per_request", days_allowed: 90, used_days: 0, pending_days: 0, remaining_days: null, max_days_per_request: null, can_apply_by_chat: false, require_document_above_days: null },
+  { type_code: "wfh", type_name: "Work From Home", limit_type: "unlimited", days_allowed: 12, used_days: 0, pending_days: 0, remaining_days: null, max_days_per_request: 5, can_apply_by_chat: true, require_document_above_days: null },
 ];
 
 const CONFIRM_REPLY = {
@@ -74,6 +76,38 @@ describe("leave page", () => {
     expect(await screen.findByText("3 left")).toBeInTheDocument();
     expect(screen.getByText(/Used 4, waiting 1/)).toBeInTheDocument();
     expect(screen.getByText(/Up to 90 days per request/)).toBeInTheDocument();
+  });
+
+  it("leaves Work From Home out of the balances, the type dropdown, and the requests list - it has its own page", async () => {
+    storeSession();
+    mockRoutes({
+      "GET /leave/balances": { body: BALANCES },
+      "GET /leave/mine": { body: [
+        { id: 20, leave_type: "wfh", start_date: "2026-11-20", end_date: "2026-11-20", day_type: "full", days: 1, status: "pending", reason: null, document_path: null, description: "Work From Home on Fri, 20 Nov 2026 (full day)" },
+      ] },
+    });
+    renderWithProviders(<App />, "/leave");
+    await screen.findByText("3 left");
+    expect(screen.queryByText("Work From Home")).not.toBeInTheDocument();
+    const options = Array.from(screen.getByLabelText("Leave type") as HTMLSelectElement).map((option) => option.textContent);
+    expect(options).not.toContain("Work From Home");
+    expect(screen.queryByText(/#20 Work From Home/)).not.toBeInTheDocument();
+  });
+
+  it("requires a document for sick leave over 1 day, but not for 1 day or less", async () => {
+    storeSession();
+    mockRoutes(ROUTES);
+    renderWithProviders(<App />, "/leave");
+    await screen.findByText("3 left");
+    await userEvent.selectOptions(screen.getByLabelText("Leave type"), "sick");
+    await userEvent.type(screen.getByLabelText("Start date"), "2026-11-10");
+    expect(screen.getByLabelText(/Related document/)).toBeInTheDocument();          // 1 day (no end date yet): optional
+    await userEvent.type(screen.getByLabelText(/End date/), "2026-11-11");
+    expect(await screen.findByLabelText(/Supporting document \(required/)).toBeInTheDocument();
+    const fetchMock = mockRoutes({ ...ROUTES, "POST /leave/apply": { body: { leave_id: 1, approver: "Priya Sen", message: "sent" } } });
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(screen.getByText("Sick Leave needs a supporting document.")).toBeInTheDocument();
+    expect(callsTo(fetchMock, "POST /leave/apply")).toHaveLength(0);
   });
 
   it("applies for casual leave", async () => {
@@ -147,6 +181,9 @@ describe("leave page", () => {
     renderWithProviders(<App />, "/leave");
     expect(await screen.findByText("Rejected by Rahul Verma: Please take it next week")).toBeInTheDocument();
     expect(screen.getByText("Approved by Priya Sen")).toBeInTheDocument();
+    // Once the super admin has decided it, the employee can no longer cancel it themselves -
+    // not even an approved leave that hasn't started yet.
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
   });
 
   it("lists my requests and cancels one", async () => {
@@ -160,6 +197,53 @@ describe("leave page", () => {
     const row = (await screen.findByText(/#12 Casual Leave on Fri, 20 Nov 2026/)).closest("li")!;
     await userEvent.click(within(row).getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(callsTo(fetchMock, "POST /leave/12/cancel")).toHaveLength(1));
+  });
+});
+
+describe("wfh page", () => {
+  const ROUTES = { "GET /leave/balances": { body: BALANCES }, "GET /leave/mine": { body: [] } };
+
+  it("shows only the WFH balance, with no leave-type dropdown or document field", async () => {
+    storeSession();
+    mockRoutes(ROUTES);
+    renderWithProviders(<App />, "/wfh");
+    expect(await screen.findByText("Work From Home")).toBeInTheDocument();
+    expect(screen.getByText(/No yearly limit/)).toBeInTheDocument();
+    expect(screen.getByText(/approved by the super admin only/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Leave type")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/document/i)).not.toBeInTheDocument();
+  });
+
+  it("applies for a WFH day", async () => {
+    storeSession();
+    const fetchMock = mockRoutes({
+      ...ROUTES,
+      "POST /leave/apply": { body: { leave_id: 21, approver: "the super admin", message: "Your request was sent to the super admin for approval." } },
+    });
+    renderWithProviders(<App />, "/wfh");
+    await screen.findByText(/No yearly limit/);
+    await userEvent.type(screen.getByLabelText("Start date"), "2026-11-10");
+    await userEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect(await screen.findByRole("status")).toHaveTextContent("sent to the super admin");
+    const sent = JSON.parse(callsTo(fetchMock, "POST /leave/apply")[0]![1].body as string);
+    expect(sent).toMatchObject({ leave_type: "wfh", start_date: "2026-11-10", end_date: "2026-11-10", day_type: "full" });
+  });
+
+  it("lists only WFH requests, and lets me cancel one", async () => {
+    storeSession();
+    const fetchMock = mockRoutes({
+      "GET /leave/balances": { body: BALANCES },
+      "GET /leave/mine": { body: [
+        { id: 20, leave_type: "wfh", start_date: "2026-11-20", end_date: "2026-11-20", day_type: "full", days: 1, status: "pending", reason: null, document_path: null, description: "Work From Home on Fri, 20 Nov 2026 (full day)" },
+        { id: 21, leave_type: "casual", start_date: "2026-11-21", end_date: "2026-11-21", day_type: "full", days: 1, status: "pending", reason: null, document_path: null, description: "Casual Leave on Sat, 21 Nov 2026 (full day)" },
+      ] },
+      "POST /leave/20/cancel": { body: { message: "The request was cancelled." } },
+    });
+    renderWithProviders(<App />, "/wfh");
+    const row = (await screen.findByText(/#20 Work From Home on Fri, 20 Nov 2026/)).closest("li")!;
+    expect(screen.queryByText(/#21 Casual Leave/)).not.toBeInTheDocument();
+    await userEvent.click(within(row).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(callsTo(fetchMock, "POST /leave/20/cancel")).toHaveLength(1));
   });
 });
 

@@ -123,13 +123,14 @@ export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled";
 export interface LeaveBalance {
   type_code: string;
   type_name: string;
-  limit_type: "per_year" | "per_request";
+  limit_type: "per_year" | "per_request" | "unlimited";
   days_allowed: number;
   used_days: number;
   pending_days: number;
   remaining_days: number | null; // null for per_request types such as maternity
   max_days_per_request: number | null;
   can_apply_by_chat: boolean;
+  require_document_above_days: number | null;
 }
 
 export interface LeaveRequestRow {
@@ -205,6 +206,7 @@ export interface AttendanceSummary {
   absent: number;
   incomplete: number;
   on_leave: number;
+  wfh: number;
   holiday: number;
   weekend: number;
   checked_in: number;
@@ -303,6 +305,22 @@ export interface SuperadminAuditEntry {
   created_at: string;
 }
 
+/** One WhatsApp number that receives the twice-daily HR report (GET/POST /superadmin/whatsapp-numbers). */
+export interface WhatsAppReportNumber {
+  id: number;
+  label: string;
+  phone_number: string;
+  created_at: string;
+}
+
+/** The outcome of sending the report to one number (POST /superadmin/whatsapp-report/send-now). */
+export interface WhatsAppReportSendResult {
+  label: string;
+  phone_number: string;
+  ok: boolean;
+  error: string | null;
+}
+
 // ---- attendance admin (office network), HR only
 export interface OfficeNetwork {
   id: number;
@@ -323,4 +341,84 @@ export interface AddOfficeNetworkRequest {
 
 export interface NetworkCheckRequest {
   enabled: boolean;
+}
+
+// ---- shared documents (Google-Drive-like: everyone sees every name, access is by request)
+export interface DocumentOwner {
+  emp_id: string;
+  full_name: string;
+}
+
+export type DocumentAccessState =
+  | { state: "owner" }
+  | { state: "none" }
+  | { state: "pending"; requested_at: string }
+  | { state: "approved"; expires_at: string }
+  | { state: "denied" };
+
+export interface SharedDocumentRow {
+  id: number;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  created_at: string;
+  owner: DocumentOwner | null;
+  is_owner: boolean;
+  my_access: DocumentAccessState;
+}
+
+export interface SharedDocumentAccessRequest {
+  id: number;
+  requester: DocumentOwner | null;
+  status: "pending" | "approved" | "denied";
+  requested_at: string;
+  decided_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+}
+
+export interface SharedDocumentDetail {
+  id: number;
+  original_filename: string;
+  content_type: string;
+  size_bytes: number;
+  created_at: string;
+  owner: DocumentOwner | null;
+  is_owner: boolean;
+  requests?: SharedDocumentAccessRequest[];
+  my_access?: DocumentAccessState;
+}
+
+export interface PendingDocumentRequest {
+  id: number;
+  document: { id: number; original_filename: string };
+  requester: DocumentOwner | null;
+  requested_at: string;
+}
+
+export interface MyDocumentRequest {
+  id: number;
+  document: { id: number; original_filename: string };
+  status: "pending" | "approved" | "denied";
+  requested_at: string;
+  decided_at: string | null;
+  expires_at: string | null;
+  is_active: boolean;
+}
+
+export interface DocumentAccessDecisionRequest {
+  decision: "approved" | "denied";
+}
+
+// ---- my payslips (self-serve, generated on first request)
+export interface PayslipMonth {
+  month: string;    // "2026-11"
+  label: string;    // "November 2026"
+  available: boolean;
+  disabled_reason: "future" | "before_joining" | null;
+}
+
+export interface SignedDownload {
+  url: string;
+  valid_for_seconds: number;
 }
