@@ -3,8 +3,11 @@
   "name": "hrms-frontend",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
-  // Where /api/* is forwarded. Change it here if the backend moves.
-  "vars": { "BACKEND_ORIGIN": "https://internal-docs-rag.onrender.com" },
+  // Where /api/* is forwarded in production. Change it here if the backend moves.
+  // The backend is the AWS EC2 instance (13.205.158.186), served over HTTPS at hrms.silvamethod.in.
+  // A Worker cannot fetch a raw IP (error 1003), so it needs this hostname.
+  // Previous backend (Render): https://internal-docs-rag.onrender.com
+  "vars": { "BACKEND_ORIGIN": "https://hrms.silvamethod.in" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

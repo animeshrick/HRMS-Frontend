@@ -1,7 +1,7 @@
 // Cloudflare Worker entry point.
 //
 // Two jobs:
-//   /api/*  -> forwarded to the FastAPI backend on Render, with the /api prefix removed.
+//   /api/*  -> forwarded to the FastAPI backend on AWS, with the /api prefix removed.
 //   everything else -> the built React app from ./dist
 //
 // The forwarding happens here, on Cloudflare's servers, not in the browser, so the browser

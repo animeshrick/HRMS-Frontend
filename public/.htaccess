@@ -1,0 +1,10 @@
+# Hostinger (Apache/LiteSpeed). Vite copies this file into dist/ on every build.
+# Single page app: unknown paths such as /login or /chat must return index.html, not a 404.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
