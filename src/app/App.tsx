@@ -4,6 +4,7 @@ import { AdminPage } from "../routes/AdminPage";
 import { AttendancePage } from "../routes/AttendancePage";
 import { AttendanceTeamPage } from "../routes/AttendanceTeamPage";
 import { DowntimePage } from "../routes/DowntimePage";
+import { EmergencyBroadcast } from "../components/EmergencyBroadcast";
 import { PageDowntimeGuard } from "../components/PageDowntimeGuard";
 import { DocumentsPage } from "../routes/DocumentsPage";
 import { PayslipsPage } from "../routes/PayslipsPage";
@@ -27,10 +28,18 @@ const DOWNTIME = String(import.meta.env.VITE_DOWNTIME ?? "")
   .toLowerCase() === "true";
 
 export function App() {
-  if (DOWNTIME) {
-    return <DowntimePage />;
-  }
+  // One column for the whole app: the notice bar at the top keeps its height, everything else
+  // fills what is left. The pages below use h-full / min-h-full, so they fit this box whether
+  // the notice is showing or not.
+  return (
+    <div className="flex h-dvh flex-col">
+      <EmergencyBroadcast />
+      <div className="min-h-0 flex-1 overflow-y-auto">{DOWNTIME ? <DowntimePage /> : <AppRoutes />}</div>
+    </div>
+  );
+}
 
+function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

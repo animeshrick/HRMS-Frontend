@@ -1,5 +1,10 @@
 // Settings used across the app. Nothing secret belongs here (a frontend is public).
 
+// The version shown at the bottom of the sidebar and under the login form. This is the ONE place
+// it is written: raise it here before building a release, so that anyone reporting a problem can
+// read out which build they are on. Keep the plain number here; the "V" is added where it is shown.
+export const APP_VERSION = "1.1";
+
 // In development the Vite proxy forwards "/api" to the FastAPI server (see vite.config.ts).
 export const API_BASE_URL: string = String(import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "");
 

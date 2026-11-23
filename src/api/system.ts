@@ -16,6 +16,9 @@ export type DowntimePageKey =
 
 export interface DowntimeStatus {
   down_pages: DowntimePageKey[];
+  // A short notice shown at the top of every page. null or missing means there is nothing to show.
+  // Set EMERGENCY_BROADCAST in the backend .env; no frontend rebuild is needed to change it.
+  emergency_broadcast?: string | null;
 }
 
 // Public - no login needed, so this works even on the login page. Set DOWNTIME_PAGES on the

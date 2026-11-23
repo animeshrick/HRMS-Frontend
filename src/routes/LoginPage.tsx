@@ -1,3 +1,4 @@
+import { APP_VERSION } from "../lib/config";
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router";
 import { useMutation } from "@tanstack/react-query";
@@ -45,7 +46,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-canvas">
+    <div className="flex min-h-full bg-canvas">
       <aside className="hidden w-1/2 flex-col justify-between bg-side p-10 text-side-ink lg:flex">
         <div className="flex items-center gap-3">
           <Logo size={44} />
@@ -95,6 +96,7 @@ export function LoginPage() {
         >
           {loginMutation.isPending ? "Logging in..." : "Log in"}
         </button>
+        <p className="pt-1 text-center text-xs text-ink-3">V{APP_VERSION}</p>
       </form>
       </div>
     </div>

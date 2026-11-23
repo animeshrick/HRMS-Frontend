@@ -5,7 +5,7 @@ import { Logo } from "../components/Logo";
 
 export function DowntimePage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-canvas px-4 py-10">
+    <div className="flex min-h-full items-center justify-center bg-canvas px-4 py-10">
       <div className="card w-full max-w-md text-center">
         <div className="mx-auto mb-5 flex justify-center">
           <Logo size={56} />

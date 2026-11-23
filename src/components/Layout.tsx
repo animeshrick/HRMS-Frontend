@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useLocation } from "react-router";
 import { getConversations } from "../api/messages";
 import { useAuth, type Session } from "../app/AuthContext";
+import { APP_VERSION } from "../lib/config";
 import { getTheme, setTheme, type Theme } from "../lib/theme";
 import { AiChatWidget } from "./AiChatWidget";
 import {
@@ -161,6 +162,7 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
           <LogoutIcon />
           Log out
         </button>
+        <p className="px-3 pt-2 text-xs text-side-ink/50">V{APP_VERSION}</p>
       </div>
     </div>
   );
@@ -200,7 +202,7 @@ export function Layout() {
 
   return (
     <ToastProvider>
-      <div className="flex h-dvh overflow-hidden bg-canvas">
+      <div className="flex h-full overflow-hidden bg-canvas">
         <aside className="hidden shrink-0 lg:block">
           <Sidebar session={session} onSignOut={() => signOut()} />
         </aside>
