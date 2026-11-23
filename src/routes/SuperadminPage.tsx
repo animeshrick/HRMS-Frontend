@@ -19,6 +19,7 @@ import { Loading } from "../components/Loading";
 import { DayMarks, statusText } from "../components/MonthTable";
 import { TimeField } from "../components/TimeField";
 import { useToast } from "../components/Toast";
+import { GovernmentIdAdminCard } from "../components/GovernmentIdAdminCard";
 import { BUTTON_PRIMARY, BUTTON_QUIET, Card, CardTitle, INPUT, PageHeader } from "../components/ui";
 import { describeError } from "../lib/errors";
 import { companyToday, formatClock, formatMinutes, formatShortTime } from "../lib/time";
@@ -365,6 +366,8 @@ export function SuperadminPage() {
         {dayQuery.isError && <ErrorMessage message={`Could not load the saved attendance of that day. ${describeError(dayQuery.error)}`} />}
         {attendanceMutation.isError && <ErrorMessage message={describeError(attendanceMutation.error)} />}
       </Card>
+
+      <GovernmentIdAdminCard />
 
       <Card label="Audit log">
         <CardTitle>Recent super admin actions</CardTitle>

@@ -120,3 +120,87 @@ export function validateSharedDocument(file: File): string | null {
   }
   return null;
 }
+
+
+// ---------------------------------------------------------------- government ID (Aadhaar / PAN)
+export const MAXIMUM_GOVERNMENT_ID_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_GOVERNMENT_ID_IMAGE_TYPES = ["image/png", "image/jpeg", "application/pdf"];
+
+// The same Verhoeff tables the backend uses: the last digit of an Aadhaar number is calculated
+// from the first eleven, so a mistyped number can be caught here before anything is sent.
+const VERHOEFF_MULTIPLICATION = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 2, 3, 4, 0, 6, 7, 8, 9, 5],
+  [2, 3, 4, 0, 1, 7, 8, 9, 5, 6],
+  [3, 4, 0, 1, 2, 8, 9, 5, 6, 7],
+  [4, 0, 1, 2, 3, 9, 5, 6, 7, 8],
+  [5, 9, 8, 7, 6, 0, 4, 3, 2, 1],
+  [6, 5, 9, 8, 7, 1, 0, 4, 3, 2],
+  [7, 6, 5, 9, 8, 2, 1, 0, 4, 3],
+  [8, 7, 6, 5, 9, 3, 2, 1, 0, 4],
+  [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+];
+const VERHOEFF_PERMUTATION = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [1, 5, 7, 6, 2, 8, 3, 0, 9, 4],
+  [5, 8, 0, 3, 7, 9, 6, 1, 4, 2],
+  [8, 9, 1, 6, 0, 4, 3, 5, 2, 7],
+  [9, 4, 5, 3, 1, 2, 6, 8, 7, 0],
+  [4, 2, 8, 6, 5, 7, 3, 9, 0, 1],
+  [2, 7, 9, 3, 8, 0, 6, 4, 1, 5],
+  [7, 0, 4, 6, 9, 1, 3, 2, 5, 8],
+];
+
+function hasValidAadhaarChecksum(digits: string): boolean {
+  let checksum = 0;
+  const reversedDigits = digits.split("").reverse();
+  for (let position = 0; position < reversedDigits.length; position += 1) {
+    const digit = Number(reversedDigits[position]);
+    checksum = VERHOEFF_MULTIPLICATION[checksum]![VERHOEFF_PERMUTATION[position % 8]![digit]!]!;
+  }
+  return checksum === 0;
+}
+
+/** Removes the spaces and dashes people type, and upper-cases a PAN. Same as the backend. */
+export function cleanGovernmentIdNumber(idType: "aadhaar" | "pan", rawNumber: string): string {
+  const withoutGaps = rawNumber.replace(/[\s-]/g, "");
+  return idType === "pan" ? withoutGaps.toUpperCase() : withoutGaps;
+}
+
+/** Same rules as the backend: 12 digits with a valid check digit, or a PAN like ABCDE1234F. */
+export function validateGovernmentIdNumber(idType: "aadhaar" | "pan", rawNumber: string): string | null {
+  const number = cleanGovernmentIdNumber(idType, rawNumber);
+  if (number.length === 0) {
+    return idType === "aadhaar" ? "Enter your Aadhaar number." : "Enter your PAN number.";
+  }
+  if (idType === "aadhaar") {
+    if (!/^\d{12}$/.test(number)) {
+      return "An Aadhaar number has 12 digits.";
+    }
+    if (number.startsWith("0") || number.startsWith("1")) {
+      return "An Aadhaar number does not start with 0 or 1. Please check the number.";
+    }
+    if (!hasValidAadhaarChecksum(number)) {
+      return "That Aadhaar number is not valid. Please check the digits and try again.";
+    }
+    return null;
+  }
+  if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(number)) {
+    return "A PAN number looks like ABCDE1234F: five letters, four digits, then one letter.";
+  }
+  return null;
+}
+
+/** Same limits as the backend: PNG, JPG or PDF, at most 5 MB. */
+export function validateGovernmentIdImage(file: File): string | null {
+  if (!ALLOWED_GOVERNMENT_ID_IMAGE_TYPES.includes(file.type)) {
+    return "Upload a PNG, JPG or PDF of your ID.";
+  }
+  if (file.size === 0) {
+    return "The file is empty.";
+  }
+  if (file.size > MAXIMUM_GOVERNMENT_ID_IMAGE_BYTES) {
+    return "The file is too large. The limit is 5 MB.";
+  }
+  return null;
+}

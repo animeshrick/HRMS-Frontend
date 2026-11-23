@@ -3,7 +3,13 @@ import { Navigate, Outlet, useLocation } from "react-router";
 import { NotAvailable } from "../components/NotAvailable";
 import { useAuth } from "./AuthContext";
 
-/** Must be logged in. A user with a temporary password can only see the change-password page. */
+/**
+ * Must be logged in, and both one-time steps must be done.
+ *
+ * A user with a temporary password can only see the change-password page. After that, a user
+ * without a government ID on file can only see the Govt ID page. The order matters: the password
+ * comes first, which is also the order the backend enforces.
+ */
 export function RequireLogin() {
   const { session } = useAuth();
   const location = useLocation();
@@ -13,6 +19,9 @@ export function RequireLogin() {
   }
   if (session.mustChangePassword && location.pathname !== "/change-password") {
     return <Navigate to="/change-password" replace />;
+  }
+  if (!session.mustChangePassword && session.mustSubmitGovernmentId && location.pathname !== "/government-id") {
+    return <Navigate to="/government-id" replace />;
   }
   return <Outlet />;
 }

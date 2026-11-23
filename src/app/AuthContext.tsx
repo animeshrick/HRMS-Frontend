@@ -12,6 +12,9 @@ export interface Session {
   fullName: string;
   employeeId: string;
   mustChangePassword: boolean;
+  // The second one-time step. Cleared by markGovernmentIdSubmitted() the moment the ID is saved,
+  // so the same session continues into the app without logging in again.
+  mustSubmitGovernmentId: boolean;
   attendanceAccess: AttendanceAccess; // hr and pm also get the team page; none = no attendance (CEO, CTO)
 }
 
@@ -19,6 +22,7 @@ interface AuthContextValue {
   session: Session | null;
   signIn: (loginResponse: LoginResponse) => void;
   signOut: (notice?: string) => void;
+  markGovernmentIdSubmitted: () => void;
   // A message to show on the login page (for example "Your session expired").
   loginNotice: string | null;
   clearLoginNotice: () => void;
@@ -61,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       fullName: loginResponse.full_name,
       employeeId: loginResponse.emp_id,
       mustChangePassword: loginResponse.must_change_password,
+      mustSubmitGovernmentId: loginResponse.must_submit_government_id ?? false,
       attendanceAccess: loginResponse.attendance_access ?? "none",
     };
     writeStoredSession(newSession);
@@ -76,6 +81,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const clearLoginNotice = useCallback(() => setLoginNotice(null), []);
+
+  // Called by the Govt ID page once the ID is saved: the gate is open from here on.
+  const markGovernmentIdSubmitted = useCallback(() => {
+    setSession((currentSession) => {
+      if (!currentSession) {
+        return currentSession;
+      }
+      const updatedSession = { ...currentSession, mustSubmitGovernmentId: false };
+      writeStoredSession(updatedSession);
+      return updatedSession;
+    });
+  }, []);
 
   // If any call gets a 401 (token expired or password changed elsewhere), log out with a message.
   useEffect(() => {
@@ -111,8 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isLoggedIn, signOut]);
 
   const value = useMemo(
-    () => ({ session, signIn, signOut, loginNotice, clearLoginNotice }),
-    [session, signIn, signOut, loginNotice, clearLoginNotice],
+    () => ({ session, signIn, signOut, markGovernmentIdSubmitted, loginNotice, clearLoginNotice }),
+    [session, signIn, signOut, markGovernmentIdSubmitted, loginNotice, clearLoginNotice],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

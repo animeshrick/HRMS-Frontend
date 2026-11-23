@@ -44,7 +44,7 @@ export function NotificationBell() {
   const leavesQuery = useQuery({
     queryKey: ["my-leaves", employeeId],
     queryFn: () => getMyLeaves(session!.accessToken),
-    enabled: Boolean(session) && !session!.mustChangePassword,
+    enabled: Boolean(session) && !session!.mustChangePassword && !session!.mustSubmitGovernmentId,
     refetchInterval: REFRESH_MILLISECONDS,
     refetchOnWindowFocus: true,
   });
@@ -53,7 +53,7 @@ export function NotificationBell() {
   const correctionsQuery = useQuery({
     queryKey: ["attendance-corrections", employeeId],
     queryFn: () => getMyCorrections(session!.accessToken),
-    enabled: Boolean(session) && !session!.mustChangePassword && session!.attendanceAccess !== "none",
+    enabled: Boolean(session) && !session!.mustChangePassword && !session!.mustSubmitGovernmentId && session!.attendanceAccess !== "none",
     refetchInterval: REFRESH_MILLISECONDS,
     refetchOnWindowFocus: true,
   });
@@ -62,14 +62,14 @@ export function NotificationBell() {
   const documentsInboxQuery = useQuery({
     queryKey: ["documents-inbox", employeeId],
     queryFn: () => getRequestsInbox(session!.accessToken),
-    enabled: Boolean(session) && !session!.mustChangePassword,
+    enabled: Boolean(session) && !session!.mustChangePassword && !session!.mustSubmitGovernmentId,
     refetchInterval: REFRESH_MILLISECONDS,
     refetchOnWindowFocus: true,
   });
   const myDocumentRequestsQuery = useQuery({
     queryKey: ["my-document-requests", employeeId],
     queryFn: () => getMyRequests(session!.accessToken),
-    enabled: Boolean(session) && !session!.mustChangePassword,
+    enabled: Boolean(session) && !session!.mustChangePassword && !session!.mustSubmitGovernmentId,
     refetchInterval: REFRESH_MILLISECONDS,
     refetchOnWindowFocus: true,
   });

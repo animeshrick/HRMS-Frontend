@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { getMyGovernmentId } from "../api/governmentId";
 import { loadMyProfile } from "../api/profile";
 import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
@@ -28,6 +29,13 @@ export function ProfilePage() {
     enabled: Boolean(session),
     retry: false, // show the error at once; the page can be reloaded
   });
+  // The government ID is shown masked ("Aadhaar ending 1234"). The full number is never sent here.
+  const governmentIdQuery = useQuery({
+    queryKey: ["my-government-id", session?.employeeId],
+    queryFn: () => getMyGovernmentId(session!.accessToken),
+    enabled: Boolean(session),
+    retry: false,
+  });
 
   if (profileQuery.isPending) {
     return <Loading label="Loading your profile" />;
@@ -55,6 +63,10 @@ export function ProfilePage() {
     ["Emergency contact", profile.emergency_contact ?? "Not recorded"],
     ["Status", profile.is_active ? "Active" : "Not active"],
   ];
+  // Left out for the super admin account, which is never asked for an ID.
+  if (governmentIdQuery.data?.required) {
+    details.push(["Government ID", governmentIdQuery.data.masked_number ?? "Not submitted"]);
+  }
 
   return (
     <div className="page page-narrow">

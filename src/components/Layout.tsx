@@ -12,6 +12,7 @@ import {
   CloseIcon,
   FolderIcon,
   HomeIcon,
+  IdCardIcon,
   KeyIcon,
   LeaveIcon,
   LogoutIcon,
@@ -35,10 +36,16 @@ interface NavItem {
   end?: boolean;
 }
 
-/** The sidebar links this person may use, in groups. A person with a temporary password gets only the change-password page. */
+/**
+ * The sidebar links this person may use, in groups. While a one-time step is pending the sidebar
+ * shows only that step: the change-password page, and after that the Govt ID page.
+ */
 function buildNavigation(session: Session): { title: string; items: NavItem[] }[] {
   if (session.mustChangePassword) {
     return [{ title: "Account", items: [{ to: "/change-password", label: "Change password", icon: <KeyIcon /> }] }];
+  }
+  if (session.mustSubmitGovernmentId) {
+    return [{ title: "Account", items: [{ to: "/government-id", label: "Govt ID", icon: <IdCardIcon /> }] }];
   }
   const canManageAttendance = ["superadmin", "hr", "pm"].includes(session.attendanceAccess);
   const isSuperadmin = session.role === "superadmin"; // an admin account only: no leave and no check-in of its own
@@ -88,7 +95,7 @@ function Sidebar({ session, onNavigate, onSignOut }: { session: Session; onNavig
     queryKey: ["conversations"],
     queryFn: () => getConversations(session.accessToken),
     refetchInterval: UNREAD_MESSAGES_REFRESH_MILLISECONDS,
-    enabled: !session.mustChangePassword,
+    enabled: !session.mustChangePassword && !session.mustSubmitGovernmentId,
   });
   const conversations = Array.isArray(conversationsQuery.data) ? conversationsQuery.data : [];
   const unreadMessageCount = conversations.reduce((total, conversation) => total + conversation.unread_count, 0);

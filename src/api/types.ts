@@ -12,6 +12,8 @@ export interface LoginResponse {
   access_token: string;
   token_type: string;
   must_change_password: boolean;
+  // The second one-time step: submit a government ID (Aadhaar or PAN) before the rest of the app opens.
+  must_submit_government_id: boolean;
   role: Role;
   full_name: string;
   emp_id: string;
@@ -458,4 +460,61 @@ export interface MessageAttachmentUpload {
   attachment_path: string;
   attachment_filename: string;
   attachment_content_type: string;
+}
+
+
+// ---------------------------------------------------------------- government ID (Aadhaar / PAN)
+export type GovernmentIdType = "aadhaar" | "pan";
+
+/** GET /government-id. The number is always masked ("Aadhaar ending 1234"). */
+export interface GovernmentIdStatus {
+  submitted: boolean;
+  required: boolean;
+  id_type: GovernmentIdType | null;
+  masked_number: string | null;
+  submitted_at: string | null;
+}
+
+export interface GovernmentIdSaved {
+  submitted: boolean;
+  id_type: GovernmentIdType;
+  masked_number: string;
+  message: string;
+}
+
+export interface GovernmentIdImageUploaded {
+  side: "front" | "back";
+  image_path: string;
+  content_type: string;
+}
+
+export interface SubmitGovernmentIdRequest {
+  id_type: GovernmentIdType;
+  id_number: string;
+  front_image_path: string;
+  back_image_path?: string | null;
+}
+
+/** Super admin only: one person's ID with the full number. */
+export interface SuperadminGovernmentId {
+  emp_id: string;
+  full_name: string;
+  id_type: GovernmentIdType;
+  id_number: string;
+  masked_number: string;
+  submitted_at: string;
+  front_image_path: string;
+  back_image_path: string | null;
+}
+
+/** Super admin only: one line of the overview of who has submitted. */
+export interface SuperadminGovernmentIdRow {
+  emp_id: string;
+  full_name: string;
+  dept: string | null;
+  role: string | null;
+  submitted: boolean;
+  id_type: GovernmentIdType | null;
+  masked_number: string | null;
+  submitted_at: string | null;
 }

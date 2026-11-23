@@ -11,6 +11,7 @@ import { HomePage } from "../routes/HomePage";
 import { SuperadminPage } from "../routes/SuperadminPage";
 import { ApprovalsPage } from "../routes/ApprovalsPage";
 import { ChangePasswordPage } from "../routes/ChangePasswordPage";
+import { GovernmentIdPage } from "../routes/GovernmentIdPage";
 import { LeavePage } from "../routes/LeavePage";
 import { MessagesPage } from "../routes/MessagesPage";
 import { WfhPage } from "../routes/WfhPage";
@@ -55,6 +56,8 @@ export function App() {
           <Route path="/me" element={<PageDowntimeGuard pageKey="me"><ProfilePage /></PageDowntimeGuard>} />
           {/* Deliberately never gated by downtime - a forced password change must never be locked out, same as the backend. */}
           <Route path="/change-password" element={<ChangePasswordPage />} />
+          {/* Not gated either, for the same reason: submitting the government ID is mandatory before anything else. */}
+          <Route path="/government-id" element={<GovernmentIdPage />} />
           <Route element={<RequireHr />}>
             <Route path="/admin" element={<PageDowntimeGuard pageKey="admin"><AdminPage /></PageDowntimeGuard>} />
           </Route>

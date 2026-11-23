@@ -43,6 +43,9 @@ export function mockRoutes(routes: Record<string, RouteReply | ((request: { body
     "GET /attendance/corrections/mine": { body: [] },
     "GET /system/downtime": { body: { down_pages: [] } },
     "GET /messages/conversations": { body: [] },
+    // The profile page and the super admin page each read one of these on their own.
+    "GET /government-id": { body: { submitted: true, required: true, id_type: "aadhaar", masked_number: "Aadhaar ending 0124", submitted_at: "2026-11-23T10:00:00+00:00" } },
+    "GET /superadmin/government-ids": { body: [] },
     ...routes,
   };
   const fetchMock = vi.fn(async (url: string, init: RequestInit = {}) => {
