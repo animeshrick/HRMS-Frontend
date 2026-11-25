@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getMyGovernmentId } from "../api/governmentId";
 import { loadMyProfile } from "../api/profile";
@@ -5,6 +6,7 @@ import { useAuth } from "../app/AuthContext";
 import { ErrorMessage } from "../components/ErrorMessage";
 import { Loading } from "../components/Loading";
 import { describeError } from "../lib/errors";
+import { initialsOf } from "../lib/initials";
 
 const ROLE_NAMES: Record<string, string> = { employee: "Employee", hr: "HR", superadmin: "Super admin", ceo: "CEO", pm: "PM (project manager)" };
 
@@ -18,6 +20,26 @@ function formatDate(dateText: string | null): string {
     return dateText;
   }
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+/** The employee's photo, or their initials when there is none or it cannot be loaded (no broken-image icon). */
+function ProfilePhoto({ fullName, imageUrl }: { fullName: string; imageUrl: string | null | undefined }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  if (imageUrl && failedUrl !== imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt={`Photo of ${fullName}`}
+        onError={() => setFailedUrl(imageUrl)}
+        className="h-24 w-24 shrink-0 rounded-full border border-line object-cover"
+      />
+    );
+  }
+  return (
+    <span aria-hidden="true" className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-brand text-3xl font-semibold text-brand-ink">
+      {initialsOf(fullName)}
+    </span>
+  );
 }
 
 /** The page at /me: the logged-in employee's own details. Nobody else's. */
@@ -70,8 +92,13 @@ export function ProfilePage() {
 
   return (
     <div className="page page-narrow">
-      <h1 className="page-title">{profile.full_name}</h1>
-      <p className="text-sm text-ink-2">Your profile. To change any detail, please ask HR.</p>
+      <div className="flex items-center gap-4">
+        <ProfilePhoto fullName={profile.full_name} imageUrl={profile.image} />
+        <div className="min-w-0">
+          <h1 className="page-title">{profile.full_name}</h1>
+          <p className="text-sm text-ink-2">Your profile. To change any detail, please ask the super admin.</p>
+        </div>
+      </div>
       <dl className="mt-4 divide-y divide-line rounded-lg border border-line bg-surface">
         {details.map(([label, value]) => (
           <div key={label} className="grid grid-cols-3 gap-3 px-4 py-2 text-sm">

@@ -73,6 +73,8 @@ export interface MyProfile {
   emergency_contact: string | null;
   manager_name: string | null;
   is_active: boolean;
+  /** Public photo URL from the employee table. Missing or null when no photo is stored. */
+  image?: string | null;
 }
 
 /** One saved message from /chat/history (a question or an answer). Only the newest few per employee are kept. */

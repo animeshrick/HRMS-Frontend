@@ -202,7 +202,7 @@ describe("team attendance page", () => {
     storeSession();
     mockRoutes(EMPLOYEE_ROUTES);
     renderWithProviders(<App />, "/attendance/team");
-    expect(await screen.findByRole("alert")).toHaveTextContent("Only HR, project managers and the super admin can see team attendance.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Only project managers and the super admin can see team attendance.");
   });
 });
 

@@ -64,7 +64,7 @@ export function LoginPage() {
           <Logo size={44} />
         </div>
         <h1 className="page-title">Log in</h1>
-        <p className="text-sm text-ink-2">Use the employee ID and password given to you by HR.</p>
+        <p className="text-sm text-ink-2">Use the employee ID and password given to you by the super admin.</p>
         {loginNotice && (
           <p role="status" className="notice border-warn/30 bg-warn-soft text-warn">
             {loginNotice}

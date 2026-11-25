@@ -60,7 +60,7 @@ describe("route guards", () => {
   it("keeps non-HR users out of the admin page", () => {
     storeSession({ role: "employee" });
     renderWithProviders(<App />, "/admin");
-    expect(screen.getByRole("alert")).toHaveTextContent("Only HR can open the HR admin page.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Only the super admin can open the admin page.");
   });
 
   it("shows the admin page and link to HR", () => {

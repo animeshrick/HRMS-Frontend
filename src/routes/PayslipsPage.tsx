@@ -120,7 +120,7 @@ export function PayslipsPage() {
 
         {isLoading && <SkeletonRows rows={4} />}
         {!isLoading && years.length === 0 && (
-          <p className="text-sm text-ink-3">No payslip years yet. This shows up once your joining date and salary are recorded by HR.</p>
+          <p className="text-sm text-ink-3">No payslip years yet. This shows up once your joining date and salary are recorded by the super admin.</p>
         )}
         {!isLoading && months.length > 0 && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

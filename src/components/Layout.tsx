@@ -4,6 +4,7 @@ import { NavLink, Outlet, useLocation } from "react-router";
 import { getConversations } from "../api/messages";
 import { useAuth, type Session } from "../app/AuthContext";
 import { APP_VERSION } from "../lib/config";
+import { initialsOf } from "../lib/initials";
 import { getTheme, setTheme, type Theme } from "../lib/theme";
 import { AiChatWidget } from "./AiChatWidget";
 import {
@@ -81,10 +82,6 @@ function buildNavigation(session: Session): { title: string; items: NavItem[] }[
 }
 
 const ROLE_NAMES: Record<string, string> = { superadmin: "Super admin", hr: "HR", pm: "Project manager", ceo: "CEO", employee: "Employee" };
-
-function initialsOf(fullName: string): string {
-  return fullName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]!.toUpperCase()).join("");
-}
 
 const UNREAD_MESSAGES_REFRESH_MILLISECONDS = 20_000;
 

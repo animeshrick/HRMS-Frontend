@@ -29,7 +29,7 @@ export function RequireLogin() {
 /** Only HR and the super admin see the admin pages (the backend checks the same). */
 export function RequireHr() {
   const { session } = useAuth();
-  return session?.role === "hr" || session?.role === "superadmin" ? <Outlet /> : <NotAvailable message="Only HR can open the HR admin page." />;
+  return session?.role === "hr" || session?.role === "superadmin" ? <Outlet /> : <NotAvailable message="Only the super admin can open the admin page." />;
 }
 
 /** Everyone except the CEO and the CTO has an attendance section. */
@@ -53,5 +53,5 @@ export function RequireSuperadmin() {
 /** HR, the PM and the super admin see the team attendance page. */
 export function RequireAttendanceManager() {
   const { session } = useAuth();
-  return ["superadmin", "hr", "pm"].includes(session?.attendanceAccess ?? "") ? <Outlet /> : <NotAvailable message="Only HR, project managers and the super admin can see team attendance." />;
+  return ["superadmin", "hr", "pm"].includes(session?.attendanceAccess ?? "") ? <Outlet /> : <NotAvailable message="Only project managers and the super admin can see team attendance." />;
 }
